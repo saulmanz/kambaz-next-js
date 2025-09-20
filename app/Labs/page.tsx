@@ -9,7 +9,7 @@ export default function Labs() {
      <h1>Labs</h1>
      <ul>
        <li>
-         <Link href="/Labs" id="wd-lab1-link">
+         <Link href="/Labs/Lab1" id="wd-lab1-link">
            Lab 1: HTML Examples </Link>
        </li>
        <li>
