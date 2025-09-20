@@ -13,7 +13,7 @@ export default function Assignments() {
       <ul id="wd-assignment-list">
 
         <li className="wd-assignment-list-item">
-          <Link href="/Courses/1234/Assignments/123"
+          <Link href="/Kambaz/Courses/1234/Assignments/123"
              className="wd-assignment-link" >
             A1 - ENV + HTML
           </Link> 
@@ -23,7 +23,7 @@ export default function Assignments() {
         </li>
 
         <li className="wd-assignment-list-item">
-            <Link href="/Courses/1234/Assignments/124"
+            <Link href="/Kambaz/Courses/1234/Assignments/124"
              className="wd-assignment-link" >
             A2 - CSS + BOOTSTRAP
           </Link> 
@@ -33,7 +33,7 @@ export default function Assignments() {
         </li>
       
         <li className="wd-assignment-list-item">
-            <Link href="/Courses/1234/Assignments/125"
+            <Link href="/Kambaz/Courses/1234/Assignments/125"
              className="wd-assignment-link" >
             A3 - JAVASCRIPT + REACT
           </Link> 

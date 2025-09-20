@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function AssignmentEditor() {
   return (
     <div id="wd-assignments-editor">
@@ -114,5 +116,12 @@ export default function AssignmentEditor() {
           </td>
         </tr>
       </table>
+
+      <Link href="/Kambaz/Courses/1234/Assignments">
+        <button type="button" >Cancel</button>
+      </Link>
+      <Link href="/Kambaz/Courses/1234/Assignments">
+        <button type="button" >Save</button>
+      </Link>
     </div>
 );}
