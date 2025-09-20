@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-html-link-for-pages */
 export default function Assignments() {
   return (
     <div id="wd-assignments">

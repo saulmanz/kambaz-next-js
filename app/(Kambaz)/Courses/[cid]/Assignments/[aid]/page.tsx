@@ -3,7 +3,7 @@ export default function AssignmentEditor() {
     <div id="wd-assignments-editor">
       <label htmlFor="wd-name">Assignment Name</label>
       <input id="wd-name" defaultValue="A1 - ENV + HTML" /><br /><br />
-      <textarea rows="10" cols="40" id="wd-description">
+      <textarea rows={10} cols={40} id="wd-description">
         The assignment is available online Submit a link to the landing page of
       </textarea>
       <br />
