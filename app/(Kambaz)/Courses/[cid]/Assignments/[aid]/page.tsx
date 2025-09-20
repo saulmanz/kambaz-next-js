@@ -117,10 +117,10 @@ export default function AssignmentEditor() {
         </tr>
       </table>
 
-      <Link href="/Kambaz/Courses/1234/Assignments">
+      <Link href="/Courses/1234/Assignments">
         <button type="button" >Cancel</button>
       </Link>
-      <Link href="/Kambaz/Courses/1234/Assignments">
+      <Link href="/Courses/1234/Assignments">
         <button type="button" >Save</button>
       </Link>
     </div>

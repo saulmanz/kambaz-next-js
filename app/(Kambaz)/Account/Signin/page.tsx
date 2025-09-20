@@ -5,7 +5,7 @@ export default function Signin() {
      <h3>Sign in</h3>
      <input placeholder="username" className="wd-username" /> <br />
      <input placeholder="password" type="password" className="wd-password" /> <br />
-     <Link id="wd-signin-btn" href="/Kambaz/Dashboard"> Sign in </Link> <br />
+     <Link id="wd-signin-btn" href="/Dashboard"> Sign in </Link> <br />
      <Link href="Signup" id="wd-signup-link"> Sign up </Link>
    </div>
 );}
