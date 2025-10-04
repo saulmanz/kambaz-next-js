@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Button, Col, FormCheck, FormControl, FormLabel, FormSelect, InputGroup, Row } from "react-bootstrap";
-import InputGroupText from "react-bootstrap/esm/InputGroupText";
 import { BsCalendar3 } from "react-icons/bs";
 import { BsXLg } from "react-icons/bs";
 
@@ -92,7 +91,7 @@ export default function AssignmentEditor() {
               <input type="date" className="form-control" 
               id="wd-due-date"
               defaultValue="2024-05-13"/>
-              <InputGroupText><BsCalendar3 /></InputGroupText>
+              <InputGroup.Text><BsCalendar3 /></InputGroup.Text>
             </InputGroup>
 
             <Row>
@@ -102,7 +101,7 @@ export default function AssignmentEditor() {
                   <input type="date" className="form-control" 
                   id="wd-available-from"
                   defaultValue="2024-05-06"/>
-                  <InputGroupText><BsCalendar3 /></InputGroupText>
+                  <InputGroup.Text><BsCalendar3 /></InputGroup.Text>
                 </InputGroup>
               </Col>
               <Col>
@@ -111,7 +110,7 @@ export default function AssignmentEditor() {
                   <input type="date" className="form-control" 
                   id="wd-available-unti"
                   defaultValue="2024-05-20"/>
-                  <InputGroupText><BsCalendar3 /></InputGroupText>
+                  <InputGroup.Text><BsCalendar3 /></InputGroup.Text>
                 </InputGroup>
               </Col>
             </Row>
