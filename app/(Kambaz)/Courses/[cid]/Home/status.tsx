@@ -4,9 +4,10 @@ import { BiImport } from "react-icons/bi";
 import { LiaFileImportSolid } from "react-icons/lia";
 import { Button } from "react-bootstrap";
 import { BsHouseDoorFill } from "react-icons/bs";
-import { BsMegaphone } from "react-icons/bs";
+import { BsFillMegaphoneFill } from "react-icons/bs";
 import { BsBarChartLineFill } from "react-icons/bs";
 import { BsBellFill } from "react-icons/bs";
+
 export default function CourseStatus() {
  return (
    <div id="wd-course-status" style={{ width: "350px" }}>
@@ -31,7 +32,7 @@ export default function CourseStatus() {
        <BsBarChartLineFill className="me-2 fs-5" /> View Course Stream </Button>
 
      <Button variant="secondary" size="lg" className="w-100 mt-1 text-start">
-       <BsMegaphone className="me-2 fs-5" /> New Announcement </Button>
+       <BsFillMegaphoneFill className="me-2 fs-5" /> New Announcement </Button>
 
      <Button variant="secondary" size="lg" className="w-100 mt-1 text-start">
        <BsBarChartLineFill className="me-2 fs-5" /> New Analytics </Button>
