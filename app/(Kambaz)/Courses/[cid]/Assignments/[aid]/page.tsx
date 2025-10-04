@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Button, Col, FormCheck, FormControl, FormLabel, FormSelect, InputGroup, Row } from "react-bootstrap";
 import InputGroupText from "react-bootstrap/esm/InputGroupText";
 import { BsCalendar3 } from "react-icons/bs";
-import { FaX } from "react-icons/fa6";
+import { BsXLg } from "react-icons/bs";
 
 export default function AssignmentEditor() {
   return (
@@ -83,7 +83,7 @@ export default function AssignmentEditor() {
             <div className="border p-4">
               <div className="d-inline-flex align-items-center bg-light text-dark rounded-pill px-3 py-1" style={{ cursor: "pointer" }}>
                 <span className="me-2">Everyone</span>
-                <FaX/>
+                <BsXLg/>
               </div>
             </div>
 

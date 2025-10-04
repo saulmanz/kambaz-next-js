@@ -1,7 +1,7 @@
 import { BsExclamationCircle } from "react-icons/bs";
 import { BsCheckCircle } from "react-icons/bs";
 import { BsDownload } from "react-icons/bs";
-import { LiaFileImportSolid } from "react-icons/lia";
+import { BsCloudDownload } from "react-icons/bs";
 import { Button } from "react-bootstrap";
 import { BsHouseDoorFill } from "react-icons/bs";
 import { BsFillMegaphoneFill } from "react-icons/bs";
@@ -24,7 +24,7 @@ export default function CourseStatus() {
      <Button variant="secondary" size="lg" className="w-100 mt-1 text-start">
        <BsDownload className="me-2 fs-5" /> Import Existing Content </Button>
      <Button variant="secondary" size="lg" className="w-100 mt-1 text-start">
-       <LiaFileImportSolid className="me-2 fs-5" /> Import from Commons </Button>
+       <BsCloudDownload className="me-2 fs-5" /> Import from Commons </Button>
 
      <Button variant="secondary" size="lg" className="w-100 mt-1 text-start">
        <BsHouseDoorFill className="me-2 fs-5" /> Choose Home Page </Button>

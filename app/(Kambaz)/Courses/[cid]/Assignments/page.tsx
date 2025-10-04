@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Button, Col, ListGroup, ListGroupItem, Row } from "react-bootstrap";
 import { BsGripVertical } from "react-icons/bs";
-import { FaPlus } from "react-icons/fa6";
+import { FaPlus } from "react-icons/fa";
 import { IoEllipsisVertical } from "react-icons/io5";
 import { BsCaretDownFill } from "react-icons/bs";
 import LessonControlButtons from "./LessonControlButtons";
