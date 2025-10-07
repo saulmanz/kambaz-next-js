@@ -12,6 +12,12 @@ import GridLayout from "./GridLayout";
 import Margins from "./Margins";
 import Positions from "./Positions";
 import ZIndex from "./ZIndex";
+import BootstrapGrids from "./BootstrapGrids";
+import BootstrapForms from "./BootstrapForms";
+import BootstrapLists from "./BootstrapLists";
+import BootstrapNavigation from "./BootstrapNavigation";
+import BootstrapTables from "./BootstrapTables";
+import ScreenSizeLabel from "./ScreenSizeLabel";
 export default function Lab2() {
   return (
     <Container>
@@ -73,6 +79,12 @@ export default function Lab2() {
         <Float/>
         <GridLayout/>
         <Flex/>
+        <BootstrapGrids/>
+        <ScreenSizeLabel/>
+        <BootstrapTables/>
+        <BootstrapLists/>
+        <BootstrapForms/>
+        <BootstrapNavigation/>
       </div>
     </Container>
 );}

@@ -28,7 +28,7 @@ export default function KambazNavigation() {
        </Link>
      </ListGroupItem>
      <ListGroupItem className="border-0 bg-black text-center">
-       <Link href="/Courses" id="wd-courses-link" className="text-white text-decoration-none">
+       <Link href="/Dashboard" id="wd-courses-link" className="text-white text-decoration-none">
          <BsFillJournalBookmarkFill className="fs-1 text-white" />
          <br />
          Courses

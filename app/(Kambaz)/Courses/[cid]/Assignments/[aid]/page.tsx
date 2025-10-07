@@ -7,7 +7,7 @@ export default function AssignmentEditor() {
   return (
     <div id="wd-assignments-editor">
       <FormLabel> Assignment Name </FormLabel>
-      <FormControl as="textarea" rows={1} /><br /><br />
+      <FormControl as="textarea" rows={1} defaultValue="A1"/><br /><br />
 
       <FormControl as="textarea" rows={10} 
         defaultValue="Complete all the Lab exercises and Kambaz exercises described in Chapter 1 of
@@ -28,13 +28,13 @@ export default function AssignmentEditor() {
 
       <br />
 
-      <Row className="mb-3" controlId="points">
+      <Row className="mb-3" name="points">
           <FormLabel column sm={2}> Points</FormLabel>
           <Col sm={10}>
               <FormControl type="wd-points" defaultValue="100" />
           </Col>
       </Row>
-      <Row className="mb-3" controlId="assignment-group">
+      <Row className="mb-3" name="assignment-group">
           <FormLabel column sm={2}> Assignment Group </FormLabel>
           <Col sm={10}>
             <FormSelect>
@@ -45,7 +45,7 @@ export default function AssignmentEditor() {
             </FormSelect>
           </Col>
       </Row>
-      <Row className="mb-3" controlId="textarea2">
+      <Row className="mb-3" name="textarea2">
           <FormLabel column sm={2}> Display Grade as </FormLabel>
           <Col sm={10}>
             <FormSelect>
@@ -54,7 +54,7 @@ export default function AssignmentEditor() {
             </FormSelect>
           </Col>
       </Row>
-      <Row className="mb-3" controlId="textarea2">
+      <Row className="mb-3" name="textarea2">
           <FormLabel column sm={2}> Submisson type </FormLabel>
           <Col sm={10}>
             <div className="border p-3">
@@ -74,7 +74,7 @@ export default function AssignmentEditor() {
           </Col>
       </Row>
 
-      <Row className="mb-2" controlID="due-date">
+      <Row className="mb-2" name="due-date">
         <FormLabel column sm={2}> Assign </FormLabel>
         <Col sm={10}>
           <div className="border p-3">
@@ -91,7 +91,6 @@ export default function AssignmentEditor() {
               <input type="date" className="form-control" 
               id="wd-due-date"
               defaultValue="2024-05-13"/>
-              <InputGroup.Text><BsCalendar3 /></InputGroup.Text>
             </InputGroup>
 
             <Row>
@@ -101,7 +100,6 @@ export default function AssignmentEditor() {
                   <input type="date" className="form-control" 
                   id="wd-available-from"
                   defaultValue="2024-05-06"/>
-                  <InputGroup.Text><BsCalendar3 /></InputGroup.Text>
                 </InputGroup>
               </Col>
               <Col>
@@ -110,7 +108,6 @@ export default function AssignmentEditor() {
                   <input type="date" className="form-control" 
                   id="wd-available-unti"
                   defaultValue="2024-05-20"/>
-                  <InputGroup.Text><BsCalendar3 /></InputGroup.Text>
                 </InputGroup>
               </Col>
             </Row>
