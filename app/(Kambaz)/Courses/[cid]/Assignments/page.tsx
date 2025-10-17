@@ -1,3 +1,6 @@
+"use client"
+import { useParams } from "next/navigation";
+import * as db from "../../../Database/index";
 import Link from "next/link";
 import { Button, Col, ListGroup, ListGroupItem, Row } from "react-bootstrap";
 import { BsGripVertical } from "react-icons/bs";
@@ -10,10 +13,10 @@ import { FaSearch } from "react-icons/fa";
 
 /* eslint-disable @next/next/no-html-link-for-pages */
 export default function Assignments() {
+  const { cid } = useParams();
+  const assignments = db.assigments;
   return (
-    <div id="wd-assignments">
-
-      
+    <div id="wd-assignments">      
       <div className="d-flex align-items-center justify-content-between" style={{ maxWidth: "100%" }}>
         <div className="input-group rounded overflow-hidden" style={{ maxWidth: "500px", flexGrow: 1 }}>
           <span className="input-group-text bg-white border-end-0">
@@ -55,69 +58,32 @@ export default function Assignments() {
           </h4>
         </ListGroupItem>
 
-        <ListGroupItem className="wd-lesson p-3 ps-1">
-          <Row className="align-items-center">
-            <Col xs="auto" className="d-flex align-items-center">
-              <BsGripVertical className="me-2 fs-3" />
-              <BsPencilSquare />
-            </Col>
-            <Col>
-              <Link href="/Courses/1234/Assignments/123"
-                className="wd-assignment-link" >
-                A1 - ENV + HTML
-              </Link> 
-              <br/>
-                Multiple Modules | <b>Not available until</b> May 6 at 12:00am |  
-                <b> Due</b> May 13 at 11:59pm | 100 pts
-            </Col>
-            <Col>
-              <LessonControlButtons />
-            </Col>
-          </Row>
-        </ListGroupItem>
-
-          <ListGroupItem className="wd-lesson p-3 ps-1">
-            <Row className="align-items-center">
-              <Col xs="auto" className="d-flex align-items-center">
-                <BsGripVertical className="me-2 fs-3" />
-                <BsPencilSquare />
-              </Col>
-              <Col>
-                <Link href="/Courses/1234/Assignments/124"
-                  className="wd-assignment-link" >
-                  A2 - CSS + BOOTSTRAP
-                </Link> 
-                <br/>
-                Multiple Modules | <b>Not available until</b> May 13 at 12:00am |  
-                <b> Due</b> May 20 at 11:59pm | 100 pts
-              </Col>
-              <Col>
-                <LessonControlButtons />
-              </Col>
-            </Row>
-          </ListGroupItem>
-
-          <ListGroupItem className="wd-lesson p-3 ps-1">
-            <Row className="align-items-center">
-              <Col xs="auto" className="d-flex align-items-center">
-                <BsGripVertical className="me-2 fs-3" />
-                <BsPencilSquare />
-              </Col>
-              <Col>
-                <Link href="/Courses/1234/Assignments/125"
-                  className="wd-assignment-link" >
-                  A3 - JAVASCRIPT + REACT
-                </Link> 
-                  <br/>
-                  Multiple Modules | <b>Not available until</b> May 20 at 12:00am |  
-                  <b> Due</b> May 27 at 11:59pm | 100 pts
-              </Col>
-              <Col>
-                <LessonControlButtons />
-              </Col>
-            </Row>
-          </ListGroupItem>
-
+        {assignments
+          .filter((assignment: any) => assignment.course === cid)
+          .map((assignment: any) => (
+            <ListGroupItem key={assignment._id} className="wd-module p-0 fs-5 border-gray">
+              <Row className="align-items-center">
+                <Col xs="auto" className="d-flex align-items-center">
+                  <BsGripVertical className="me-2 fs-3" />
+                  <BsPencilSquare />
+                </Col>
+                <Col>
+                  <Link
+                    href={`/Courses/${cid}/Assignments/${assignment._id}`}
+                    className="wd-assignment-link"
+                  >
+                    {assignment.title}
+                  </Link>
+                  <br />
+                  Multiple Modules | <b>Not available until</b> {assignment.available} |  
+                  <b> Due</b> {assignment.due} | {assignment.points} pts
+                </Col>
+                <Col>
+                  <LessonControlButtons />
+                </Col>
+              </Row>
+            </ListGroupItem>
+        ))}
       </ListGroup>
     </div>
 );}
