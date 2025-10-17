@@ -7,11 +7,11 @@ import * as db from "../../../../Database/index";
 
 export default function AssignmentEditor() {
   const { cid, aid } = useParams();
-  const assignments = db.assigments.filter((assignment: any) => assignment.course === cid &&
+  const assignments = db.assigments.filter((assignment) => assignment.course === cid &&
                                                                 assignment._id === aid);
   return (
     <div id="wd-assignments-editor">
-      {assignments.map((a: any) => (
+      {assignments.map((a) => (
         <><FormLabel> Assignment Name </FormLabel>
         <FormControl as="textarea" rows={1} defaultValue={a.title} /><br /><br />
         

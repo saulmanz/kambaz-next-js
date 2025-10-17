@@ -59,8 +59,8 @@ export default function Assignments() {
         </ListGroupItem>
 
         {assignments
-          .filter((assignment: any) => assignment.course === cid)
-          .map((assignment: any) => (
+          .filter((assignment) => assignment.course === cid)
+          .map((assignment) => (
             <ListGroupItem key={assignment._id} className="wd-module p-0 fs-5 border-gray">
               <Row className="align-items-center">
                 <Col xs="auto" className="d-flex align-items-center">

@@ -8,6 +8,7 @@ export default function TodoList() {
      <h3>Todo List</h3>
      <ListGroup>
        { todos.map(todo => {
+           // eslint-disable-next-line react/jsx-key
            return(<TodoItem todo={todo}/>);   })}
      </ListGroup><hr/>
    </>

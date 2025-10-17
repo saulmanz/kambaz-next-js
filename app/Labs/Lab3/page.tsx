@@ -28,6 +28,7 @@ import Styles from "./Styles"
 import Square from "./Square"
 import Highlight from "./Highlight";
 import PathParameters from "./PathParameters";
+import TodoList from "./todos/TodoList";
 
 export default function Lab3() {
  console.log('Hello World!');
@@ -53,6 +54,7 @@ export default function Lab3() {
       <FindFunction/>
       <FilterFunction/>
       <JsonStringify/>
+      <TodoList/>
       <House/>
       <Spreader/>
       <Destructing/>
