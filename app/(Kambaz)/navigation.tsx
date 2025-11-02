@@ -10,11 +10,12 @@ export default function KambazNavigation() {
   const pathname = usePathname();
   const links = [
     { label: "Dashboard", path: "/Dashboard", icon: AiOutlineDashboard },
-    { label: "Courses",   path: "/Dashboard", icon: LiaBookSolid },
+    { label: "Courses",   path: "/Courses",   icon: LiaBookSolid },
     { label: "Calendar",  path: "/Calendar",  icon: IoCalendarOutline },
     { label: "Inbox",     path: "/Inbox",     icon: FaInbox },
-    { label: "Labs",      path: "/Labs",             icon: LiaCogSolid },
+    { label: "Labs",      path: "/Labs",      icon: LiaCogSolid },
   ];
+  
   return (
     <ListGroup id="wd-kambaz-navigation" style={{width: 120}}
          className="rounded-0 position-fixed bottom-0 top-0 d-none d-md-block bg-black z-2">

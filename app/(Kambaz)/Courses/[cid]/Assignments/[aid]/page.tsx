@@ -1,43 +1,43 @@
 "use client"
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Button, Col, FormCheck, FormControl, FormLabel, FormSelect, InputGroup, Row } from "react-bootstrap";
 import { BsXLg } from "react-icons/bs";
 import * as db from "../../../../Database/index";
+import { useState } from "react";
+import { useDispatch } from "react-redux";
+import { updateAssignment } from "../reducer";
+import { useSelector } from "react-redux";
 
 export default function AssignmentEditor() {
   const { cid, aid } = useParams();
-  const assignments = db.assigments.filter((assignment) => assignment.course === cid &&
-                                                                assignment._id === aid);
+  const { assignments } = useSelector((state: any) => state.assignmentReducer);
+  const a = assignments.find(
+    (a: any) => a.course === cid && a._id === aid
+  );
+  const dispatch = useDispatch();
+  const router = useRouter();
+  const [assignment, setAssignment] = useState<any>(a);
+
   return (
     <div id="wd-assignments-editor">
-      {assignments.map((a) => (
-        <><FormLabel> Assignment Name </FormLabel>
-        <FormControl as="textarea" rows={1} defaultValue={a.title} /><br /><br />
+        <FormLabel> Assignment Name </FormLabel>
+        <FormControl as="textarea" rows={1}  value={assignment.title}
+         onChange={(e) => setAssignment({ ...assignment, title: e.target.value })} /><br /><br />
         
         <FormControl as="textarea" rows={10} 
-        defaultValue="Complete all the Lab exercises and Kambaz exercises described in Chapter 1 of
-
-        Developing Full Stack Next.js Web ApplicationsLinks to an external site.
-
-        Submit a link to the landing page of your Web application running on Vercel.
-
-        The landing page should be the Kambaz application with a link to the Lab exercises.
-
-        Lab 1 should be the landing page of the Lab exercises and should include the following:
-
-        Your full name and section
-        Links to each of the lab assignments
-        Link to the Kambaz application
-        Links to all relevant source code repositories
-        The Kambaz application should include a link to navigate back to the landing page."/>
+          value={assignment.description}
+          onChange={(e) => setAssignment({ ...assignment, description: e.target.value })}
+        />
 
         <br />
 
         <Row className="mb-3" name="points">
             <FormLabel column sm={2}> Points</FormLabel>
             <Col sm={10}>
-                <FormControl type="wd-points" defaultValue={a.points} />
+                <FormControl type="wd-points"  value={assignment.points}
+                onChange={(e) => setAssignment({ ...assignment, points: e.target.value })}
+                />
             </Col>
         </Row>
 
@@ -99,7 +99,9 @@ export default function AssignmentEditor() {
                 <InputGroup>
                 <input type="date" className="form-control" 
                 id="wd-due-date"
-                defaultValue={a.due}/>
+                 value={assignment.due}
+                onChange={(e) => setAssignment({ ...assignment, dueDate: e.target.value })}
+                />
                 </InputGroup>
 
                 <Row>
@@ -108,7 +110,9 @@ export default function AssignmentEditor() {
                     <InputGroup>
                     <input type="date" className="form-control" 
                     id="wd-available-from"
-                    defaultValue={a.available}/>
+                     value={assignment.available}
+                    onChange={(e) => setAssignment({ ...assignment, availableDate: e.target.value })}
+                    />
                     </InputGroup>
                 </Col>
                 <Col>
@@ -116,14 +120,15 @@ export default function AssignmentEditor() {
                     <InputGroup>
                     <input type="date" className="form-control" 
                     id="wd-available-unti"
-                    defaultValue={a.available}/>
+                     value={assignment.due}
+                    onChange={(e) => setAssignment({ ...assignment, availableUntil: e.target.value })}
+                    />
                     </InputGroup>
                 </Col>
                 </Row>
             </div>
             </Col>
         </Row>
-        </>))}
 
       <hr />
       <div className="d-flex gap-2 ms-3 float-end">
@@ -133,9 +138,16 @@ export default function AssignmentEditor() {
           </Button>
         </Link>
         <Link href={`/Courses/${cid}/Assignments`}>
-          <Button variant="danger" size="lg">
-            Save
-          </Button>
+            <Button
+              variant="danger"
+              size="lg"
+              onClick={() => {
+                dispatch(updateAssignment(assignment));
+                router.push(`/Courses/${cid}/Assignments`);
+              }}
+              >
+              Save
+            </Button>
         </Link>
       </div>
     </div>

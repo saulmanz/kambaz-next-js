@@ -1,6 +1,5 @@
 "use client"
 import { useParams } from "next/navigation";
-import * as db from "../../../Database/index";
 import Link from "next/link";
 import { Button, Col, ListGroup, ListGroupItem, Row } from "react-bootstrap";
 import { BsGripVertical } from "react-icons/bs";
@@ -10,13 +9,18 @@ import { BsCaretDownFill } from "react-icons/bs";
 import LessonControlButtons from "./LessonControlButtons";
 import { BsPencilSquare } from "react-icons/bs";
 import { FaSearch } from "react-icons/fa";
+import { useSelector, useDispatch } from "react-redux";
+import { deleteAssignment } from "./reducer";
 
 /* eslint-disable @next/next/no-html-link-for-pages */
 export default function Assignments() {
   const { cid } = useParams();
-  const assignments = db.assigments;
+  const dispatch = useDispatch();
+  
+  const { assignments } = useSelector((state: any) => state.assignmentReducer);
   return (
     <div id="wd-assignments">      
+      <hr />
       <div className="d-flex align-items-center justify-content-between" style={{ maxWidth: "100%" }}>
         <div className="input-group rounded overflow-hidden" style={{ maxWidth: "500px", flexGrow: 1 }}>
           <span className="input-group-text bg-white border-end-0">
@@ -34,10 +38,13 @@ export default function Assignments() {
             <FaPlus className="position-relative me-2" style={{ bottom: "1px" }} />
             Group
           </Button>
-          <Button variant="danger" size="lg">
-            <FaPlus className="position-relative me-2" style={{ bottom: "1px" }} />
-            Assignment
-          </Button>
+          <Link href={`/Courses/${cid}/Assignments/AssignmentEditor`}
+                    className="wd-assignment-link">
+            <Button variant="danger" size="lg">
+              <FaPlus className="position-relative me-2" style={{ bottom: "1px" }} />
+              Assignment
+            </Button>
+          </Link>
         </div>
       </div>
 
@@ -57,10 +64,9 @@ export default function Assignments() {
             </span>
           </h4>
         </ListGroupItem>
-
         {assignments
-          .filter((assignment) => assignment.course === cid)
-          .map((assignment) => (
+          .filter((assignment: any) => assignment.course === cid)
+          .map((assignment : any) => (
             <ListGroupItem key={assignment._id} className="wd-module p-0 fs-5 border-gray">
               <Row className="align-items-center">
                 <Col xs="auto" className="d-flex align-items-center">
@@ -79,7 +85,11 @@ export default function Assignments() {
                   <b> Due</b> {assignment.due} | {assignment.points} pts
                 </Col>
                 <Col>
-                  <LessonControlButtons />
+                  <LessonControlButtons 
+                    assignmentID={assignment._id}
+                    deleteAssignment={(assignmentID) => {
+                      dispatch(deleteAssignment(assignmentID));
+                  }}/>
                 </Col>
               </Row>
             </ListGroupItem>
