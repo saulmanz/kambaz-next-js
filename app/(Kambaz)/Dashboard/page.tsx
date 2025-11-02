@@ -98,10 +98,12 @@ export default function Dashboard() {
         onChange={e => setCourse({ ...course, name: e.target.value })}
       />
       <FormControl
+        as="textarea"   
+        rows={3}        
         value={course.description}
-        rows={3}
         onChange={e => setCourse({ ...course, description: e.target.value })}
       />
+
 
       <h2 id="wd-dashboard-published">Published Courses ({userCourses.length})</h2>
       <hr />
