@@ -6,6 +6,7 @@ import { FormControl, Button } from "react-bootstrap";
 export default function AddRedux() {
   const [a, setA] = useState(12);
   const [b, setB] = useState(23);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { sum } = useSelector((state: any) => state.addReducer);
   const dispatch = useDispatch();
   return (

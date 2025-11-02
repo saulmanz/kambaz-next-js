@@ -2,24 +2,38 @@
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Button, Col, ListGroup, ListGroupItem, Row } from "react-bootstrap";
-import { BsGripVertical } from "react-icons/bs";
-import { FaPlus } from "react-icons/fa";
+import { BsGripVertical, BsCaretDownFill, BsPencilSquare } from "react-icons/bs";
+import { FaPlus, FaSearch } from "react-icons/fa";
 import { IoEllipsisVertical } from "react-icons/io5";
-import { BsCaretDownFill } from "react-icons/bs";
 import LessonControlButtons from "./LessonControlButtons";
-import { BsPencilSquare } from "react-icons/bs";
-import { FaSearch } from "react-icons/fa";
 import { useSelector, useDispatch } from "react-redux";
 import { deleteAssignment } from "./reducer";
 
-/* eslint-disable @next/next/no-html-link-for-pages */
+interface Assignment {
+  _id: string;
+  title: string;
+  course: string;
+  available: string;
+  due: string;
+  points: number;
+}
+
+interface AssignmentState {
+  assignments: Assignment[];
+}
+
+interface RootState {
+  assignmentReducer: AssignmentState;
+}
+
 export default function Assignments() {
   const { cid } = useParams();
   const dispatch = useDispatch();
-  
-  const { assignments } = useSelector((state: any) => state.assignmentReducer);
+
+  const { assignments } = useSelector((state: RootState) => state.assignmentReducer);
+
   return (
-    <div id="wd-assignments">      
+    <div id="wd-assignments">
       <hr />
       <div className="d-flex align-items-center justify-content-between" style={{ maxWidth: "100%" }}>
         <div className="input-group rounded overflow-hidden" style={{ maxWidth: "500px", flexGrow: 1 }}>
@@ -38,8 +52,7 @@ export default function Assignments() {
             <FaPlus className="position-relative me-2" style={{ bottom: "1px" }} />
             Group
           </Button>
-          <Link href={`/Courses/${cid}/Assignments/AssignmentEditor`}
-                    className="wd-assignment-link">
+          <Link href={`/Courses/${cid}/Assignments/AssignmentEditor`} className="wd-assignment-link">
             <Button variant="danger" size="lg">
               <FaPlus className="position-relative me-2" style={{ bottom: "1px" }} />
               Assignment
@@ -64,9 +77,10 @@ export default function Assignments() {
             </span>
           </h4>
         </ListGroupItem>
+
         {assignments
-          .filter((assignment: any) => assignment.course === cid)
-          .map((assignment : any) => (
+          .filter((assignment: Assignment) => assignment.course === cid)
+          .map((assignment: Assignment) => (
             <ListGroupItem key={assignment._id} className="wd-module p-0 fs-5 border-gray">
               <Row className="align-items-center">
                 <Col xs="auto" className="d-flex align-items-center">
@@ -87,13 +101,15 @@ export default function Assignments() {
                 <Col>
                   <LessonControlButtons 
                     assignmentID={assignment._id}
-                    deleteAssignment={(assignmentID) => {
+                    deleteAssignment={(assignmentID: string) => {
                       dispatch(deleteAssignment(assignmentID));
-                  }}/>
+                    }}
+                  />
                 </Col>
               </Row>
             </ListGroupItem>
         ))}
       </ListGroup>
     </div>
-);}
+  );
+}
