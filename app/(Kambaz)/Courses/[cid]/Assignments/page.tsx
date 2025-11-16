@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 import { useParams } from "next/navigation";
 import Link from "next/link";
@@ -7,13 +8,15 @@ import { FaPlus, FaSearch } from "react-icons/fa";
 import { IoEllipsisVertical } from "react-icons/io5";
 import LessonControlButtons from "./LessonControlButtons";
 import { useSelector, useDispatch } from "react-redux";
-import { deleteAssignment } from "./reducer";
+import { deleteAssignment, setAssignments } from "./reducer";
+import * as client from "./client";
+import { useEffect } from "react";
 
 interface Assignment {
   _id: string;
   title: string;
   course: string;
-  available: string;
+  available: string
   due: string;
   points: number;
 }
@@ -31,6 +34,14 @@ export default function Assignments() {
   const dispatch = useDispatch();
 
   const { assignments } = useSelector((state: RootState) => state.assignmentReducer);
+
+  useEffect(() => {
+    const loadAssignments = async () => {
+      const serverAssignments = await client.findAssignmentsForCourse(cid as string);
+      dispatch(setAssignments(serverAssignments));
+    };
+    loadAssignments();
+  }, [cid, dispatch]);
 
   return (
     <div id="wd-assignments">
@@ -79,7 +90,6 @@ export default function Assignments() {
         </ListGroupItem>
 
         {assignments
-          .filter((assignment: Assignment) => assignment.course === cid)
           .map((assignment: Assignment) => (
             <ListGroupItem key={assignment._id} className="wd-module p-0 fs-5 border-gray">
               <Row className="align-items-center">
@@ -95,8 +105,8 @@ export default function Assignments() {
                     {assignment.title}
                   </Link>
                   <br />
-                  Multiple Modules | <b>Not available until</b> {assignment.available} |  
-                  <b> Due</b> {assignment.due} | {assignment.points} pts
+                    Multiple Modules | <b>Not available until</b> {assignment.available} |  
+                    <b> Due</b> {assignment.due} | {assignment.points} pts
                 </Col>
                 <Col>
                   <LessonControlButtons 

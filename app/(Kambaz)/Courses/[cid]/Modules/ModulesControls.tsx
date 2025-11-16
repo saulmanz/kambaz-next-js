@@ -8,6 +8,7 @@ type ModulesControlsProps = {
   moduleName: string;
   setModuleName: (title: string) => void;
   addModule: () => void;
+  deleteModule: (module : string) => void
 };
 
 export default function ModulesControls({

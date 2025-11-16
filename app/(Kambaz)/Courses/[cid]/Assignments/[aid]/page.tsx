@@ -1,235 +1,142 @@
 "use client";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import {
-  Button,
-  Col,
-  FormCheck,
-  FormControl,
-  FormLabel,
-  FormSelect,
-  InputGroup,
-  Row,
-} from "react-bootstrap";
-import { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { updateAssignment } from "../reducer";
+import { Button, Col, FormControl, FormLabel, InputGroup, Row } from "react-bootstrap";
+import { useState, useEffect } from "react";
+import { useDispatch } from "react-redux";
 
-interface Assignment {
-  _id: string;
-  course: string;
-  title: string;
-  description: string;
-  points: number | string;
-  dueDate: string;
-  availableDate: string;
-  availableUntil: string;
-  group?: string;
-  gradeDisplay?: string;
-  submissionType?: string;
-}
+import * as client from "../client";
+import { addAssignment, updateAssignment as updateRedux } from "../reducer";
 
 export default function AssignmentEditor() {
   const { cid, aid } = useParams();
   const router = useRouter();
   const dispatch = useDispatch();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { assignments } = useSelector((state: any) => state.assignmentReducer);
+  // Controlled state for assignment
+  const [assignment, setAssignment] = useState({
+    _id: "",
+    title: "",
+    description: "",
+    course: cid,
+    points: 100,
+    available: "2025-05-06",
+    due: "2025-05-13",
+    group: "ASSIGNMENTS",
+  });
 
-  const assignmentFromStore = assignments.find(
-    (a: Assignment) => a.course === cid && a._id === aid
-  );
+  // Load assignment if editing
+useEffect(() => {
+  if (!aid || aid as string == "AssignmentEditor") return;
 
-  const [assignment, setAssignment] = useState<Assignment | null>(
-    assignmentFromStore || null
-  );
+  const loadAssignment = async () => {
+    const a = await client.findAssignmentById(aid.toString());
+    setAssignment({
+      _id: a._id ?? "",
+      title: a.title ?? "",
+      description: a.description ?? "",
+      course: a.course ?? cid,
+      points: a.points ?? 100,
+      available: a.available ?? "",
+      due: a.due ?? "",
+      group: a.group ?? "ASSIGNMENTS",
+    });
+  };
 
-  if (!assignment) return <div>Assignment not found</div>;
+  loadAssignment();
+}, [aid, cid]);
+
+
+  // Save handler
+  const save = async () => {
+    try {
+      if (!aid || aid as string == "AssignmentEditor") {
+        const newA = await client.createAssignment(assignment);
+        dispatch(addAssignment(newA));
+      } else {
+        const updated = await client.updateAssignment(assignment);
+        dispatch(updateRedux(updated));
+      }
+      router.push(`/Courses/${cid}/Assignments`);
+    } catch (err) {
+      console.error("Failed to save assignment:", err);
+      alert("Failed to save assignment. Check console for details.");
+    }
+  };
 
   return (
     <div id="wd-assignments-editor">
-      <FormLabel>Assignment Name</FormLabel>
+      <FormLabel>Assignment Title</FormLabel>
       <FormControl
         as="textarea"
         rows={1}
         value={assignment.title}
-        onChange={(e) =>
-          setAssignment({ ...assignment, title: e.target.value })
-        }
-        className="mb-3"
+        onChange={(e) => setAssignment({ ...assignment, title: e.target.value })}
       />
 
+      <br />
+
+      <FormLabel>Description</FormLabel>
       <FormControl
         as="textarea"
-        rows={5}
+        rows={6}
         value={assignment.description}
-        onChange={(e) =>
-          setAssignment({ ...assignment, description: e.target.value })
-        }
-        className="mb-3"
+        onChange={(e) => setAssignment({ ...assignment, description: e.target.value })}
       />
 
+      <br />
+
       <Row className="mb-3">
-        <FormLabel column sm={2}>
-          Points
-        </FormLabel>
+        <FormLabel column sm={2}>Points</FormLabel>
         <Col sm={10}>
           <FormControl
             type="number"
             value={assignment.points}
             onChange={(e) =>
-              setAssignment({ ...assignment, points: e.target.value })
+              setAssignment({ ...assignment, points: Number(e.target.value) })
             }
           />
         </Col>
       </Row>
 
       <Row className="mb-3">
-        <FormLabel column sm={2}>
-          Assignment Group
-        </FormLabel>
+        <FormLabel column sm={2}>Available From</FormLabel>
         <Col sm={10}>
-          <FormSelect
-            value={assignment.group || "ASSIGNMENTS"}
-            onChange={(e) =>
-              setAssignment({ ...assignment, group: e.target.value })
-            }
-          >
-            <option value="ASSIGNMENTS">ASSIGNMENTS</option>
-            <option value="PROJECTS">PROJECTS</option>
-            <option value="OTHER">OTHER</option>
-            <option value="OTHER2">OTHER2</option>
-          </FormSelect>
-        </Col>
-      </Row>
-
-      <Row className="mb-3">
-        <FormLabel column sm={2}>
-          Display Grade As
-        </FormLabel>
-        <Col sm={10}>
-          <FormSelect
-            value={assignment.gradeDisplay || "PERCENTAGE"}
-            onChange={(e) =>
-              setAssignment({ ...assignment, gradeDisplay: e.target.value })
-            }
-          >
-            <option value="PERCENTAGE">PERCENTAGE</option>
-            <option value="PROJECTS">PROJECTS</option>
-          </FormSelect>
-        </Col>
-      </Row>
-
-      <Row className="mb-3">
-        <FormLabel column sm={2}>
-          Submission Type
-        </FormLabel>
-        <Col sm={10}>
-          <div className="border p-3">
-            <FormSelect
-              value={assignment.submissionType || "ONLINE"}
+          <InputGroup>
+            <input
+              type="date"
+              className="form-control"
+              value={assignment.available}
               onChange={(e) =>
-                setAssignment({ ...assignment, submissionType: e.target.value })
+                setAssignment({ ...assignment, available: e.target.value })
               }
-            >
-              <option value="ONLINE">ONLINE</option>
-              <option value="IN_PERSON">IN PERSON</option>
-            </FormSelect>
-
-            <FormLabel column sm={2} className="mt-3">
-              Online Entry Options
-            </FormLabel>
-            <FormCheck
-              type="radio"
-              label="Text Entry"
-              name="wd-text-entry"
-              checked
             />
-            <FormCheck type="radio" label="Website URL" name="wd-text-entry" />
-            <FormCheck
-              type="radio"
-              label="Media Recordings"
-              name="wd-text-entry"
-            />
-            <FormCheck
-              type="radio"
-              label="Student Annotation"
-              name="wd-text-entry"
-            />
-            <FormCheck type="radio" label="File Upload" name="wd-text-entry" />
-          </div>
+          </InputGroup>
         </Col>
       </Row>
 
       <Row className="mb-3">
-        <FormLabel column sm={2}>
-          Assign
-        </FormLabel>
+        <FormLabel column sm={2}>Due</FormLabel>
         <Col sm={10}>
-          <div className="border p-3">
-            <FormLabel>Due</FormLabel>
-            <InputGroup className="mb-2">
-              <input
-                type="date"
-                className="form-control"
-                value={assignment.dueDate}
-                onChange={(e) =>
-                  setAssignment({ ...assignment, dueDate: e.target.value })
-                }
-              />
-            </InputGroup>
-
-            <Row>
-              <Col>
-                <FormLabel>Available From</FormLabel>
-                <InputGroup>
-                  <input
-                    type="date"
-                    className="form-control"
-                    value={assignment.availableDate}
-                    onChange={(e) =>
-                      setAssignment({ ...assignment, availableDate: e.target.value })
-                    }
-                  />
-                </InputGroup>
-              </Col>
-              <Col>
-                <FormLabel>Until</FormLabel>
-                <InputGroup>
-                  <input
-                    type="date"
-                    className="form-control"
-                    value={assignment.availableUntil}
-                    onChange={(e) =>
-                      setAssignment({ ...assignment, availableUntil: e.target.value })
-                    }
-                  />
-                </InputGroup>
-              </Col>
-            </Row>
-          </div>
+          <InputGroup>
+            <input
+              type="date"
+              className="form-control"
+              value={assignment.due}
+              onChange={(e) =>
+                setAssignment({ ...assignment, due: e.target.value })
+              }
+            />
+          </InputGroup>
         </Col>
       </Row>
 
-      <hr />
-      <div className="d-flex gap-2 ms-3 float-end">
+      <div className="d-flex gap-2 float-end">
         <Link href={`/Courses/${cid}/Assignments`}>
-          <Button variant="secondary" size="lg">
-            Cancel
-          </Button>
+          <Button variant="secondary" size="lg">Cancel</Button>
         </Link>
 
-        <Button
-          variant="danger"
-          size="lg"
-          onClick={() => {
-            dispatch(updateAssignment(assignment));
-            router.push(`/Courses/${cid}/Assignments`);
-          }}
-        >
-          Save
-        </Button>
+        <Button variant="danger" size="lg" onClick={save}>Save</Button>
       </div>
     </div>
   );
