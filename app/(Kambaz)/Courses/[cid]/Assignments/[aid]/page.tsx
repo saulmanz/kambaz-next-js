@@ -13,7 +13,6 @@ export default function AssignmentEditor() {
   const router = useRouter();
   const dispatch = useDispatch();
 
-  // Controlled state for assignment
   const [assignment, setAssignment] = useState({
     _id: "",
     title: "",
@@ -25,8 +24,7 @@ export default function AssignmentEditor() {
     group: "ASSIGNMENTS",
   });
 
-  // Load assignment if editing
-useEffect(() => {
+  useEffect(() => {
   if (!aid || aid as string == "AssignmentEditor") return;
 
   const loadAssignment = async () => {
@@ -43,11 +41,10 @@ useEffect(() => {
     });
   };
 
-  loadAssignment();
-}, [aid, cid]);
+    loadAssignment();
+  }, [aid, cid]);
 
 
-  // Save handler
   const save = async () => {
     try {
       if (!aid || aid as string == "AssignmentEditor") {

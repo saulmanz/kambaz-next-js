@@ -55,7 +55,7 @@ export default function Dashboard() {
 
   const fetchCourses = async () => {
     try {
-      const allCourses = await client.findMyCourses(); // fetch all courses
+      const allCourses = await client.findMyCourses();
       dispatch(setCourses(allCourses));
     } catch (error) {
       console.error(error);
@@ -91,12 +91,10 @@ export default function Dashboard() {
     dispatch(setCourses(courses.map(c => c._id === course._id ? course : c)));
   };
 
-  // Courses the user is enrolled in
   const userCourses = courses.filter(c =>
     enrollments.some(e => e.user === currentUser._id && e.course === c._id)
   );
 
-  // Courses to display in the current view
   const displayedCourses = isEnrollmentView ? courses : userCourses;
 
   return (

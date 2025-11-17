@@ -4,7 +4,6 @@ export default function EnrollmentsDao(db) {
   if (!db.enrollments) db.enrollments = [];
 
   const enrollUserInCourse = (userId, courseId) => {
-    // Prevent duplicate
     const existing = db.enrollments.find(e => e.user === userId && e.course === courseId);
     if (existing) return existing;
 

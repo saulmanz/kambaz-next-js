@@ -3,7 +3,6 @@ import EnrollmentsDao from "./dao.js";
 export default function EnrollmentsRoutes(app, db) {
   const dao = EnrollmentsDao(db);
 
-  // List all enrollments for current user
   const findMyEnrollments = (req, res) => {
     const currentUser = req.session["currentUser"];
     if (!currentUser) return res.status(401).json({ error: "Not logged in" });
@@ -12,7 +11,6 @@ export default function EnrollmentsRoutes(app, db) {
     res.json(enrollments);
   };
 
-  // Enroll in a course
   const enrollInCourse = (req, res) => {
     const currentUser = req.session["currentUser"];
     if (!currentUser) return res.status(401).json({ error: "Not logged in" });
@@ -24,7 +22,6 @@ export default function EnrollmentsRoutes(app, db) {
     res.json(enrollment);
   };
 
-  // Unenroll from a course
   const unenrollFromCourse = (req, res) => {
     const currentUser = req.session["currentUser"];
     if (!currentUser) return res.status(401).json({ error: "Not logged in" });
@@ -36,7 +33,6 @@ export default function EnrollmentsRoutes(app, db) {
     res.json({ deleted });
   };
 
-  // Routes
   app.get("/api/enrollments", findMyEnrollments);
   app.post("/api/enrollments", enrollInCourse);
   app.delete("/api/enrollments/:enrollmentId", unenrollFromCourse);

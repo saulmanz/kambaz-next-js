@@ -10,12 +10,26 @@ import ModulesRoutes from "./Kambaz/Modules/routes.js";
 import AssignmentsRoutes from "./Assignments/routes.js";
 const app = express();
 
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://kambaz-node-server-app2.vercel.app",
+];
+
 app.use(
- cors({
-   credentials: true,
-   origin: process.env.CLIENT_URL || "http://localhost:3000",
- })
+  cors({
+    credentials: true,
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) === -1) {
+        const msg =
+          "The CORS policy for this site does not allow access from the specified Origin.";
+        return callback(new Error(msg), false);
+      }
+      return callback(null, true);
+    },
+  })
 );
+
 
 
 const sessionOptions = {
@@ -23,8 +37,8 @@ const sessionOptions = {
   resave: false,
   saveUninitialized: false,
   cookie: {
-    sameSite: "lax",           // dev-friendly
-    secure: false,             // dev: false (HTTP)
+    sameSite: "lax",
+    secure: false,
   },
 };
 

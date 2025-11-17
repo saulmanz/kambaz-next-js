@@ -15,7 +15,6 @@ const updateUser = (req, res) => {
     return res.status(404).json({ message: "User not found" });
   }
 
-  // update session if this is the logged-in user
   if (req.session.currentUser && req.session.currentUser._id === userId) {
     req.session.currentUser = updated;
   }

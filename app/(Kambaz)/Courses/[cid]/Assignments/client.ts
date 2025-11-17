@@ -6,7 +6,6 @@ const HTTP_SERVER = process.env.NEXT_PUBLIC_HTTP_SERVER;
 const COURSES_API = `${HTTP_SERVER}/api/courses`;
 const ASSIGNMENTS_API = `${HTTP_SERVER}/api/assignments`;
 
-// CREATE
 export const createAssignment = async (assignment: any) => {
   const response = await axios.post(
     `${COURSES_API}/${assignment.course}/assignments`,
@@ -25,13 +24,11 @@ export const updateAssignment = async (assignment: any) => {
   return data;
 };
 
-// DELETE
 export const deleteAssignment = async (assignmentId: string) => {
   const response = await axios.delete(`${ASSIGNMENTS_API}/${assignmentId}`);
   return response.data;
 };
 
-// LIST BY COURSE
 export const findAssignmentsForCourse = async (courseId: string) => {
   const response = await axios.get(`${COURSES_API}/${courseId}/assignments`);
   return response.data;
