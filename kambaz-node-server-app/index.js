@@ -10,27 +10,37 @@ import ModulesRoutes from "./Kambaz/Modules/routes.js";
 import AssignmentsRoutes from "./Assignments/routes.js";
 const app = express();
 
-const allowedOrigins = [
-  "http://localhost:3000",
-  "https://kambaz-node-server-app2.vercel.app",
-];
+const allowedOrigins = process.env.CLIENT_URLS
+  ? process.env.CLIENT_URLS.split(",")
+  : ["http://localhost:3000"]; // fallback
 
 app.use(
   cors({
     credentials: true,
     origin: function (origin, callback) {
+      // allow requests with no origin (like mobile apps or server-to-server)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) === -1) {
-        const msg =
-          "The CORS policy for this site does not allow access from the specified Origin.";
-        return callback(new Error(msg), false);
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(
+          new Error(
+            `The CORS policy for this site does not allow access from the origin: ${origin}`
+          ),
+          false
+        );
       }
-      return callback(null, true);
     },
   })
 );
 
-
+app.use(
+ cors({
+   credentials: true,
+   origin: process.env.CLIENT_URL || "http://localhost:3000",
+ })
+);
 
 const sessionOptions = {
   secret: process.env.SESSION_SECRET || "kambaz",
