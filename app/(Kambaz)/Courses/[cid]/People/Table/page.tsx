@@ -2,9 +2,13 @@
 import { useEffect, useState } from "react";
 import PeopleTable from "./PeopleTable";
 
-export default function PeopleTablePage() {
-    const HTTP_SERVER = process.env.NEXT_PUBLIC_HTTP_SERVER;
-    const USERS_API = `${HTTP_SERVER}/api/users`;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export default function PeopleTablePage({ params }: { params: { cid: string } }) {
+  const { cid } = params;
+
+  const HTTP_SERVER = process.env.NEXT_PUBLIC_HTTP_SERVER;
+  const USERS_API = `${HTTP_SERVER}/api/courses/${cid}/users`;
+
   const [users, setUsers] = useState([]);
 
   const fetchUsers = async () => {
@@ -15,7 +19,7 @@ export default function PeopleTablePage() {
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [cid]);
 
   return (
     <div>

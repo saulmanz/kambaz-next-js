@@ -111,8 +111,13 @@ export default function Assignments() {
                 <Col>
                   <LessonControlButtons 
                     assignmentID={assignment._id}
-                    deleteAssignment={(assignmentID: string) => {
-                      dispatch(deleteAssignment(assignmentID));
+                    deleteAssignment={async (assignmentID: string) => {
+                      try {
+                        await client.deleteAssignment(assignmentID);
+                        dispatch(deleteAssignment(assignmentID));
+                      } catch (err) {
+                        console.error(err);
+                      }
                     }}
                   />
                 </Col>
