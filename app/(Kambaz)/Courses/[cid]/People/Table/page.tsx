@@ -1,10 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import PeopleTable from "./PeopleTable";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export default function PeopleTablePage({ params }: { params: { cid: string } }) {
-  const { cid } = params;
+export default function PeopleTablePage() {
+  const params = useParams();
+  const cid = params.cid;
 
   const HTTP_SERVER = process.env.NEXT_PUBLIC_HTTP_SERVER;
   const USERS_API = `${HTTP_SERVER}/api/courses/${cid}/users`;
@@ -18,7 +19,7 @@ export default function PeopleTablePage({ params }: { params: { cid: string } })
   };
 
   useEffect(() => {
-    fetchUsers();
+    if (cid) fetchUsers();
   }, [cid]);
 
   return (
