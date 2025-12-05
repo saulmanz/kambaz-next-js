@@ -10,6 +10,8 @@ import CourseRoutes from "./Kambaz/Courses/routes.js";
 import ModulesRoutes from "./Kambaz/Modules/routes.js";
 import AssignmentsRoutes from "./Kambaz/Assignments/routes.js";
 import mongoose from "mongoose";
+import QuizzesRoutes from "./Kambaz/Quizzes/routes.js";
+import QuestionsRoutes from "./Kambaz/Questions/routes.js";
 
 const app = express();
 
@@ -76,6 +78,8 @@ UserRoutes(app, db);
 CourseRoutes(app, db);
 ModulesRoutes(app, db);
 AssignmentsRoutes(app, db);
+QuizzesRoutes(app, db);
+QuestionsRoutes(app, db)
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {

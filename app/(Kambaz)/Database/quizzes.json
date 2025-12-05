@@ -1,0 +1,17 @@
+[
+    { 
+        "_id": "Q101",
+        "title": "Aerodynamic Quiz 1",
+        "course": "RS101",
+        "available": "2025-05-06",
+        "due": "2025-05-13",
+        "points": 100,
+        "questionTotal": 10,
+        "studentScores": [
+            {
+                "studntId": 123,
+                "lastScore": 100
+            }
+        ]
+    }
+]
