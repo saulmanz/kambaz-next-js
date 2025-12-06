@@ -12,7 +12,14 @@ export default function QuestionsDao() {
   async function createQuestion(question) {
     const quiz = await model.findById(question.quiz);
     if (!quiz) throw new Error("Quiz not found");
-    const newQuestion = { ...question, _id: uuidv4(), answers: [] };
+
+    const newQuestion = { 
+      ...question, 
+      _id: uuidv4(), 
+      answers: [], 
+      points: question.points ?? 1 
+    };
+
     quiz.questions = [...(quiz.questions || []), newQuestion];
     await quiz.save();
     return newQuestion;
