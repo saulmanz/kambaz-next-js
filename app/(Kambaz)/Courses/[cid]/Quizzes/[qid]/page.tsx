@@ -1,8 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Button, Col, Row, Card } from "react-bootstrap";
+import {
+  Button,
+  Col,
+  Row,
+  Card
+} from "react-bootstrap";
 import { useState, useEffect } from "react";
+
 import * as client from "../client";
 
 interface Quiz {
@@ -24,6 +31,7 @@ interface Quiz {
   available: string;
   due: string;
   until: string;
+  questions: string[]
 }
 
 export default function QuizDetails() {
@@ -32,7 +40,10 @@ export default function QuizDetails() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!qid) return;
+    if (!qid) {
+      setQuiz((prev: any) => ({ ...prev, _id: "", course: cid ?? prev.course }));
+      return;
+    }
 
     const loadQuiz = async () => {
       try {

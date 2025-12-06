@@ -54,7 +54,7 @@ export const updateQuestion = async (question: any) => {
   return response.data;
 };
 
-export const deleteModule = async (questionId: string) => {
+export const deleteQuestion = async (questionId: string) => {
   const response = await axios.delete(`${QUESTIONS_API}/${questionId}`);
   return response.data;
 };
