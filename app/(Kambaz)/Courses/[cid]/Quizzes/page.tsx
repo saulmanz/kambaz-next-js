@@ -44,7 +44,7 @@ export default function Quizzes() {
         </div>
 
         <div className="d-flex gap-2 ms-3">
-          <Link href={`/Courses/${cid}/Quizzes/QuizEditor`} className="wd-assignment-link">
+          <Link href={`/Courses/${cid}/Quizzes/Editor`} className="wd-assignment-link">
             <Button variant="danger" size="lg">
               <FaPlus className="position-relative me-2" style={{ bottom: "1px" }} />
               Quiz

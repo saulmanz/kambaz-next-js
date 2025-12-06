@@ -35,3 +35,15 @@ body * {
 .wd-lesson {
   border-left: 3px solid green !important;
 }
+
+.wd-quiz-link {
+  color: #dc3545 !important;
+  font-weight: bold !important;
+  text-decoration: none !important;
+  transition: color 0.2s ease;
+}
+
+.wd-quiz-link:hover {
+  color: #bb2d3b !important;
+  text-decoration: underline !important;
+}
