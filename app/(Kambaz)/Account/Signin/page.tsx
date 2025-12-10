@@ -1,23 +1,20 @@
 "use client";
 import Link from "next/link";
-import { redirect } from "next/dist/client/components/navigation";
-import { setCurrentUser } from "../reducer";
-import { useDispatch } from "react-redux";
+import { redirect } from "next/navigation";
+import { setCurrentUser, setSignInRole } from "../reducer";
+import { useDispatch, useSelector } from "react-redux";
 import { useState } from "react";
 import * as client from "../client";
 import { FormControl, Button } from "react-bootstrap";
 
-interface Credentials {
-  username: string;
-  password: string;
-}
-
 export default function Signin() {
-  const [credentials, setCredentials] = useState<Credentials>({ username: "", password: "" });
+  const [credentials, setCredentials] = useState({ username: "", password: "" });
   const dispatch = useDispatch();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const signInRole = useSelector((state: any) => state.accountReducer.signInRole);
 
   const signin = async () => {
-    const user =  await client.signin(credentials);
+    const user = await client.signin(credentials, signInRole);
     if (!user) {
       alert("Invalid username or password");
       return;
@@ -29,6 +26,25 @@ export default function Signin() {
   return (
     <div id="wd-signin-screen">
       <h1>Sign in</h1>
+
+      {/* --- ROLE TOGGLE BUTTONS --- */}
+      <div className="d-flex gap-2 mb-3">
+        <Button
+          variant={signInRole === "student" ? "primary" : "secondary"}
+          onClick={() => dispatch(setSignInRole("student"))}
+          className="w-50"
+        >
+          Student
+        </Button>
+
+        <Button
+          variant={signInRole === "faculty" ? "primary" : "secondary"}
+          onClick={() => dispatch(setSignInRole("faculty"))}
+          className="w-50"
+        >
+          Faculty
+        </Button>
+      </div>
 
       <FormControl
         value={credentials.username}

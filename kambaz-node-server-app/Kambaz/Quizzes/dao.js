@@ -38,11 +38,20 @@ export default function QuizzesDao() {
     return model.findOneAndDelete({ _id: quizId }).exec();
   };
 
+  const togglePublish = async (quizId) => {
+    const quiz = await model.findById(quizId).exec();
+    if (!quiz) return null;
+
+    quiz.published = !quiz.published;
+    return quiz.save();
+  };
+
   return {
     findQuizzesForCourse,
     findQuizById,
     createQuiz,
     updateQuiz,
     deleteQuiz,
+    togglePublish
   };
 }

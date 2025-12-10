@@ -23,12 +23,14 @@ const QuizSchema = new mongoose.Schema({
   studentScores: [
     {
       studentId: Number,
-      lastScore: Number
+      lastScore: Number,
+      attempt: Number,
     }
   ],
   questions: [
     {}
-  ]
+  ],
+  published: { type: Boolean, default: false}
 }, { collection: "quizzes" });
 
 export default QuizSchema;

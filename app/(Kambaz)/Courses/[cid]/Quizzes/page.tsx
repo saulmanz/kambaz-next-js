@@ -17,8 +17,7 @@ export default function Quizzes() {
   const dispatch = useDispatch();
 
   const { quizzes } = useSelector((state: any) => state.quizReducer);
-
-  console.log(quizzes)
+  const role = useSelector((state: any) => state.account?.signInRole); // <-- Get user role
 
   useEffect(() => {
     const loadQuizzes = async () => {
@@ -27,6 +26,20 @@ export default function Quizzes() {
     };
     loadQuizzes();
   }, [cid, dispatch]);
+
+  function getAvailabilityStatus(quiz: any) {
+    const now = new Date();
+    const available = quiz.available ? new Date(quiz.available) : null;
+    const until = quiz.until ? new Date(quiz.until) : null;
+
+    if (!available && !until) return "Available";
+    if (available && now < available) return `Not available until ${quiz.available}`;
+    if (until && now > until) return "Closed";
+    if (available && until && now >= available && now <= until) return "Available";
+    if (available && now >= available) return "Available";
+
+    return "Available";
+  }
 
   return (
     <div id="wd-quizzes">
@@ -43,17 +56,19 @@ export default function Quizzes() {
           />
         </div>
 
-        <div className="d-flex gap-2 ms-3">
-          <Link href={`/Courses/${cid}/Quizzes/Editor`} className="wd-assignment-link">
-            <Button variant="danger" size="lg">
-              <FaPlus className="position-relative me-2" style={{ bottom: "1px" }} />
-              Quiz
-            </Button>
-          </Link>
-          <Button variant="secondary">
+        {role !== "STUDENT" && (
+          <div className="d-flex gap-2 ms-3">
+            <Link href={`/Courses/${cid}/Quizzes/Editor`} className="wd-assignment-link">
+              <Button variant="danger" size="lg">
+                <FaPlus className="position-relative me-2" style={{ bottom: "1px" }} />
+                Quiz
+              </Button>
+            </Link>
+            <Button variant="secondary">
               <IoEllipsisVertical className="fs-4" />
-          </Button>
-        </div>
+            </Button>
+          </div>
+        )}
       </div>
 
       <ListGroup className="rounded-0 mt-5" id="wd-modules">
@@ -68,15 +83,19 @@ export default function Quizzes() {
             </span>
           </h4>
         </ListGroupItem>
-
+        
         {quizzes
+          .filter((q: any) => role !== "student" || q.published) // <-- Students only see published
+          .slice()
+          .sort((a: any, b: any) => new Date(a.due).getTime() - new Date(b.due).getTime())
           .map((quiz: any) => (
             <ListGroupItem key={quiz._id} className="wd-module p-0 fs-5 border-gray">
               <Row className="align-items-center">
                 <Col xs="auto" className="d-flex align-items-center">
                   <BsGripVertical className="me-2 fs-3" />
-                  <BsPencilSquare />
+                  {role !== "STUDENT" && <BsPencilSquare />}
                 </Col>
+
                 <Col>
                   <Link
                     href={`/Courses/${cid}/Quizzes/${quiz._id}`}
@@ -85,21 +104,32 @@ export default function Quizzes() {
                     {quiz.title}
                   </Link>
                   <br />
-                    Multiple Modules | <b>Not available until</b> {quiz.available} |  
+                    Multiple Modules | <b>{getAvailabilityStatus(quiz)}</b> |
                     <b> Due</b> {quiz.due} | {quiz.points} pts | {quiz.questionTotal} Questions
                 </Col>
+
                 <Col>
-                  <LessonControlButtons 
-                    quizID={quiz._id}
-                    deleteQuiz={async (quizID: string) => {
-                      try {
-                        await client.deleteQuiz(quizID);
-                        dispatch(deleteQuiz(quizID));
-                      } catch (err) {
-                        console.error(err);
-                      }
-                    }}
-                  />
+                  {role !== "STUDENT" && (
+                    <LessonControlButtons
+                      quiz={quiz}
+                      deleteQuiz={async (quizID: string) => {
+                        try {
+                          await client.deleteQuiz(quizID);
+                          dispatch(deleteQuiz(quizID));
+                        } catch (err) {
+                          console.error(err);
+                        }
+                      }}
+                      togglePublish={async (quizID: string) => {
+                        try {
+                          const updatedQuiz = await client.togglePublish(quizID);
+                          dispatch(setQuiz(quizzes.map((q: any) => q._id === quizID ? updatedQuiz : q)));
+                        } catch (err) {
+                          console.error(err);
+                        }
+                      }}
+                    />
+                  )}
                 </Col>
               </Row>
             </ListGroupItem>

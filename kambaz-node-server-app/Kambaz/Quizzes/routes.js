@@ -50,4 +50,13 @@ export default function QuizzesRoutes(app) {
       res.status(500).json({ error: err.message });
     }
   });
+
+  app.put("/api/quizzes/:quizId/publish", async (req, res) => {
+    try {
+      const updated = await dao.togglePublish(req.params.quizId);
+      res.json(updated);
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
 }

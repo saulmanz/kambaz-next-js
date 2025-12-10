@@ -26,10 +26,14 @@ export const findUserById = async (id: string) => {
   return response.data;
 };
 
-export const signin = async (credentials: any) => {
-  const response = await axiosWithCredentials.post(`${USERS_API}/signin`, credentials);
+export const signin = async (credentials: any, role: string) => {
+  const response = await axiosWithCredentials.post(
+    `${USERS_API}/signin`,
+    { ...credentials, role }
+  );
   return response.data;
 };
+
 export const profile = async () => {
   const response = await axiosWithCredentials.post(`${USERS_API}/profile`);
   return response.data;

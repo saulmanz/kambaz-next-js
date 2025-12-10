@@ -34,6 +34,13 @@ export const findQuizzesForCourse = async (cid: string) => {
   return data;
 };
 
+export const togglePublish = async (quizId: string) => {
+  const response = await fetch(`${QUIZZES_API}/${quizId}/publish`, {
+    method: "PUT",
+  });
+  return response.json();
+};
+
 const QUESTIONS_API = `${HTTP_SERVER}/api/questions`;
 
 export const findQuestionsForQuiz = async (quizId: string) => {

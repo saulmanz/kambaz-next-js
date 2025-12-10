@@ -107,33 +107,63 @@ export default function QuizEditor() {
     setQuiz((prev: any) => ({ ...prev, points: total }));
   }, [questions]);
 
-  // Save quiz (create or update)
   const save = async () => {
     try {
       const quizToSave = {
         ...quiz,
         course: quiz.course || cid,
-        questions
+        questions,
       };
 
+      let savedQuiz;
       if (!qid || qid === "QuizEditor" || !quiz._id) {
-        const newQuiz = await client.createQuiz(quizToSave);
-        dispatch(addQuiz(newQuiz));
+        savedQuiz = await client.createQuiz(quizToSave);
+        dispatch(addQuiz(savedQuiz));
       } else {
-        const updatedQuiz = await client.updateQuiz(quizToSave);
-        dispatch(updateRedux(updatedQuiz));
+        savedQuiz = await client.updateQuiz(quizToSave);
+        dispatch(updateRedux(savedQuiz));
       }
 
+      // Redirect (only if called by Save)
       router.push(`/Courses/${cid}/Quizzes`);
+      return savedQuiz;
     } catch (err) {
       console.error("Failed to save quiz:", err);
-      alert("Failed to save quiz. Check console for details.");
+      alert("Failed to save quiz.");
     }
   };
 
-  const updateQuestion = (index: number, updates: any) => {
-    setQuestions((prev) => prev.map((q, i) => (i === index ? { ...q, ...updates } : q)));
+  const saveWithoutRedirect = async () => {
+    const quizToSave = {
+      ...quiz,
+      course: quiz.course || cid,
+      questions,
+    };
+
+    let savedQuiz;
+    if (!qid || qid === "QuizEditor" || !quiz._id) {
+      savedQuiz = await client.createQuiz(quizToSave);
+      dispatch(addQuiz(savedQuiz));
+    } else {
+      savedQuiz = await client.updateQuiz(quizToSave);
+      dispatch(updateRedux(savedQuiz));
+    }
+
+    return savedQuiz;
   };
+
+  const saveAndPublish = async () => {
+    try {
+      const savedQuiz = await saveWithoutRedirect();
+      await client.togglePublish(savedQuiz._id); // Or publish API call
+
+      router.push(`/Courses/${cid}/Quizzes`);
+    } catch (err) {
+      console.error("Failed to save and publish:", err);
+    }
+  };
+
+
 
   const addQuestion = () => {
     const tempId = `temp-${Date.now()}`;
@@ -228,10 +258,68 @@ export default function QuizEditor() {
               <FormControl type="text" value={quiz.accessCode} onChange={(e) => setQuiz({ ...quiz, accessCode: e.target.value })} />
             </Col>
           </Row>
+          <Row className="mb-3">
+            <FormLabel column sm={2}>
+              Assign
+            </FormLabel>
+            <Col sm={10}>
+              <div className="border p-3">
+                <FormLabel>Due</FormLabel>
+                <InputGroup className="mb-2">
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={quiz.due}
+                    onChange={(e) =>
+                      setQuiz({ ...quiz, due: e.target.value })
+                    }
+                  />
+                </InputGroup>
+
+                <Row>
+                  <Col>
+                    <FormLabel>Available From</FormLabel>
+                    <InputGroup>
+                      <input
+                        type="date"
+                        className="form-control"
+                        value={quiz.available}
+                        onChange={(e) =>
+                          setQuiz({ ...quiz, available: e.target.value })
+                        }
+                      />
+                    </InputGroup>
+                  </Col>
+                  <Col>
+                    <FormLabel>Until</FormLabel>
+                    <InputGroup>
+                      <input
+                        type="date"
+                        className="form-control"
+                        value={quiz.until}
+                        onChange={(e) =>
+                          setQuiz({ ...quiz, until: e.target.value })
+                        }
+                      />
+                    </InputGroup>
+                  </Col>
+                </Row>
+              </div>
+            </Col>
+          </Row>
           <hr />
-          <div className="d-flex gap-2 float-end">
-            <Link href={`/Courses/${cid}/Quizzes`}><Button variant="secondary" size="lg">Cancel</Button></Link>
-            <Button variant="danger" size="lg" onClick={save}>Save</Button>
+          <div className="d-flex justify-content-end gap-2 mt-4 mb-5">
+            <Link href={`/Courses/${cid}/Quizzes`}>
+              <Button variant="secondary" size="lg">Cancel</Button>
+            </Link>
+
+            <Button variant="danger" size="lg" onClick={save}>
+              Save
+            </Button>
+
+            <Button variant="success" size="lg" onClick={saveAndPublish}>
+              Save & Publish
+            </Button>
           </div>
         </>
       )}
@@ -259,17 +347,31 @@ export default function QuizEditor() {
 
               return (
                 <ListGroup.Item key={q._id || index}>
-                  <h5>Question {index + 1}</h5>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    className="float-end"
-                    onClick={() => deleteQuestion(index)}
-                  >
-                    Delete
-                  </Button>
+                <h5>Question {index + 1}</h5>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  className="float-end"
+                  onClick={() => deleteQuestion(index)}
+                >
+                  Delete
+                </Button>
 
-                  <FormLabel>Question Type</FormLabel>
+                <FormLabel>Question Title</FormLabel>
+                <FormControl
+                  type="text"
+                  value={localQuestion.name}
+                  onChange={(e) =>
+                    setEditingQuestion((prev) => ({
+                      ...prev,
+                      [q._id]: { ...localQuestion, name: e.target.value },
+                    }))
+                  }
+                />
+                <br />
+
+                <FormLabel>Question Type</FormLabel>
+
                   <FormControl
                     as="select"
                     value={localQuestion.type}
@@ -357,7 +459,6 @@ export default function QuizEditor() {
                       variant="primary"
                       size="sm"
                       onClick={() => {
-                        // save changes to local questions array
                         const edited = editingQuestion[q._id];
                         if (edited) {
                           setQuestions((prev) =>
@@ -379,10 +480,19 @@ export default function QuizEditor() {
             })}
           </ListGroup>
           <hr />
-          <div className="d-flex gap-2 float-end">
-            <Link href={`/Courses/${cid}/Quizzes`}><Button variant="secondary" size="lg">Cancel</Button></Link>
-            <Button variant="danger" size="lg" onClick={save}>Save</Button>
+          <div className="d-flex justify-content-end gap-2 mt-4 mb-5">
+            <Link href={`/Courses/${cid}/Quizzes`}>
+              <Button variant="secondary" size="lg">Cancel</Button>
+            </Link>
+          <Button variant="danger" size="lg" onClick={save}>
+            Save
+          </Button>
+
+          <Button variant="success" size="lg" onClick={saveAndPublish}>
+            Save & Publish
+          </Button>
           </div>
+
         </div>
       )}
     </div>

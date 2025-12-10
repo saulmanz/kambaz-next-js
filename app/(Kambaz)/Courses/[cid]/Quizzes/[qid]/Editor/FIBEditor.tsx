@@ -46,7 +46,7 @@ export function FIBEditor({ question, index, onChange }: any) {
       />
 
       <br />
-      <FormLabel>Possible Correct Answers</FormLabel>
+      <FormLabel>Correct Answers</FormLabel>
       <br/>
 
       {answers.map((ans: any, i: number) => (
@@ -67,7 +67,7 @@ export function FIBEditor({ question, index, onChange }: any) {
       ))}
 
       <Button size="sm" onClick={addAnswer}>
-        Add Another Correct Answer
+        Add Another Blank
       </Button>
     </div>
   );
