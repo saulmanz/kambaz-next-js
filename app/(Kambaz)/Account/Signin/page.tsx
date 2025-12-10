@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { setCurrentUser, setSignInRole } from "../reducer";
+import { setCurrentUser } from "../reducer";
 import { useDispatch, useSelector } from "react-redux";
 import { useState } from "react";
 import * as client from "../client";
@@ -26,25 +26,6 @@ export default function Signin() {
   return (
     <div id="wd-signin-screen">
       <h1>Sign in</h1>
-
-      {/* --- ROLE TOGGLE BUTTONS --- */}
-      <div className="d-flex gap-2 mb-3">
-        <Button
-          variant={signInRole === "student" ? "primary" : "secondary"}
-          onClick={() => dispatch(setSignInRole("student"))}
-          className="w-50"
-        >
-          Student
-        </Button>
-
-        <Button
-          variant={signInRole === "faculty" ? "primary" : "secondary"}
-          onClick={() => dispatch(setSignInRole("faculty"))}
-          className="w-50"
-        >
-          Faculty
-        </Button>
-      </div>
 
       <FormControl
         value={credentials.username}

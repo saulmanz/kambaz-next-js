@@ -17,8 +17,9 @@ export default function Quizzes() {
   const dispatch = useDispatch();
 
   const { quizzes } = useSelector((state: any) => state.quizReducer);
-  const role = useSelector((state: any) => state.account?.signInRole); // <-- Get user role
-
+  const currentUser = useSelector((state: any) => state.accountReducer.currentUser);
+  const role = currentUser?.role?.toUpperCase(); // ensure "STUDENT" / "FACULTY"
+  
   useEffect(() => {
     const loadQuizzes = async () => {
       const serverQuizzes = await client.findQuizzesForCourse(cid as string);
@@ -56,6 +57,7 @@ export default function Quizzes() {
           />
         </div>
 
+        {/* Only faculty can create quizzes */}
         {role !== "STUDENT" && (
           <div className="d-flex gap-2 ms-3">
             <Link href={`/Courses/${cid}/Quizzes/Editor`} className="wd-assignment-link">
@@ -85,7 +87,8 @@ export default function Quizzes() {
         </ListGroupItem>
         
         {quizzes
-          .filter((q: any) => role !== "student" || q.published) // <-- Students only see published
+          // Students only see published quizzes
+          .filter((q: any) => role !== "STUDENT" || q.published)
           .slice()
           .sort((a: any, b: any) => new Date(a.due).getTime() - new Date(b.due).getTime())
           .map((quiz: any) => (
@@ -93,6 +96,7 @@ export default function Quizzes() {
               <Row className="align-items-center">
                 <Col xs="auto" className="d-flex align-items-center">
                   <BsGripVertical className="me-2 fs-3" />
+                  {/* Only faculty can see edit icon */}
                   {role !== "STUDENT" && <BsPencilSquare />}
                 </Col>
 
@@ -109,6 +113,7 @@ export default function Quizzes() {
                 </Col>
 
                 <Col>
+                  {/* Only faculty can delete/publish */}
                   {role !== "STUDENT" && (
                     <LessonControlButtons
                       quiz={quiz}
