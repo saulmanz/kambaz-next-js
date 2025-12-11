@@ -70,7 +70,7 @@ export function MCQEditor({ question, index, onChange }: MCQEditorProps) {
               update(options.filter((_, idx) => idx !== i))
             }
           >
-            ✕
+            X
           </Button>
         </div>
       ))}

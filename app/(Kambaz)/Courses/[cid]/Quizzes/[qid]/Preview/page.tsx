@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { 
   Button, 
@@ -46,7 +45,7 @@ interface Quiz {
 }
 
 export default function QuizPreview() {
-  const { cid, qid } = useParams();
+  const { qid } = useParams();
   const currentUser = useSelector((state: any) => state.accountReducer.currentUser);
   const role = currentUser?.role?.toUpperCase();
   const isPreview = role !== "STUDENT";
@@ -121,6 +120,7 @@ export default function QuizPreview() {
       return isFIBCorrect(question);
     }
     return false;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [answers]);
 
   const calculateScore = useCallback(() => {

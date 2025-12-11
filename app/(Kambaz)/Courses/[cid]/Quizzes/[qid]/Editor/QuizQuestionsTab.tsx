@@ -24,7 +24,6 @@ export default function QuizQuestionsTab({
   const [openEditors, setOpenEditors] = useState<any>({});
 
   const openEditorFor = (q: any) => {
-    // initialize editingQuestion for this question if not present
     setEditingQuestion((prev: any) => {
       if (prev && prev[q._id]) return prev;
       return { ...(prev || {}), [q._id]: { ...q } };
@@ -81,6 +80,7 @@ export default function QuizQuestionsTab({
                 />
               )}
 
+              {/* When quiz editor is open */}
               {openEditors[q._id] && (
                 <>
                   <FormLabel>Question Title</FormLabel>
@@ -184,20 +184,16 @@ export default function QuizQuestionsTab({
                       variant="primary"
                       size="sm"
                       onClick={() => {
-                        // Use the edited copy if present, otherwise fall back to localQuestion
                         const edited = (editingQuestion && editingQuestion[q._id]) ? editingQuestion[q._id] : localQuestion;
 
-                        // Close editor first so the UI collapses immediately
                         setOpenEditors((prev: any) => ({ ...(prev || {}), [q._id]: false }));
 
-                        // Update questions array with the edited data
                         setQuestions((prev: any[]) =>
                           prev.map((item, i) =>
                             i === index ? { ...item, ...edited } : item
                           )
                         );
 
-                        // Clear editing state for this question
                         setEditingQuestion((prev: any) => {
                           if (!prev) return prev;
                           const c = { ...prev };

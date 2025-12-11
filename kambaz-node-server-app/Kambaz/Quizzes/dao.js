@@ -9,13 +9,7 @@ export default function QuizzesDao() {
   };
 
   const findQuizById = (quizId) => {
-    if (!quizId) return null;
-
-    const query = mongoose.Types.ObjectId.isValid(quizId)
-      ? { $or: [{ _id: quizId }, { _id: new mongoose.Types.ObjectId(quizId) }] }
-      : { _id: quizId };
-
-    return model.findOne(query).exec();
+    return model.findById(quizId);
   };
 
   const createQuiz = (quiz) => {
@@ -27,19 +21,19 @@ export default function QuizzesDao() {
   };
 
   const updateQuiz = (quizId, updatedQuiz) => {
-    return model.findOneAndUpdate(
+    return model.updateOne(
       { _id: quizId },
       { $set: updatedQuiz },
       { new: true }
-    ).exec();
+    )
   };
 
   const deleteQuiz = (quizId) => {
-    return model.findOneAndDelete({ _id: quizId }).exec();
+    return model.deleteOne({ _id: quizId })
   };
 
   const togglePublish = async (quizId) => {
-    const quiz = await model.findOne({ _id: quizId }).exec();
+    const quiz = await model.findOne({ _id: quizId });
     if (!quiz) return null;
 
     quiz.published = !quiz.published;
@@ -47,7 +41,7 @@ export default function QuizzesDao() {
   };
 
   const submitQuizScore = async (quizId, studentId, score, answers = {}) => {
-    const quiz = await model.findOne({ _id: quizId }).exec();
+    const quiz = await model.findOne({ _id: quizId })
     if (!quiz) return null;
 
     // Initialize studentScores if it doesn't exist

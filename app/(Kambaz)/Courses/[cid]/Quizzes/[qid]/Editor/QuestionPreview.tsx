@@ -18,7 +18,7 @@ export default function QuestionPreview({
         <strong>{question.name || "(Untitled Question)"}</strong>
 
         <div className="text-muted">
-          Type: {question.type} • {question.points} pts
+          Type: {question.type} - {question.points} pts
         </div>
 
         {question.type === "MCQ" && question.options && (

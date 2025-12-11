@@ -71,7 +71,6 @@ export default function QuizEditor() {
         <Tab eventKey="questions" title="Questions" />
       </Tabs>
 
-      {/* ------------------ DETAILS TAB CONTENT ------------------ */}
       {activeTab === "details" && (
         <>
           <FormLabel>Quiz Title</FormLabel>
@@ -255,7 +254,6 @@ export default function QuizEditor() {
         </>
       )}
 
-      {/* ------------------ QUESTIONS TAB CONTENT ------------------ */}
       {activeTab === "questions" && (
         <div>
           <p>Please save the quiz first before adding questions.</p>

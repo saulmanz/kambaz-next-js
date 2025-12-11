@@ -29,17 +29,21 @@ export default function Quizzes() {
   }, [cid, dispatch]);
 
   function getAvailabilityStatus(quiz: any) {
-    const now = new Date();
-    const available = quiz.available ? new Date(quiz.available) : null;
-    const until = quiz.until ? new Date(quiz.until) : null;
+    const now = new Date().getTime();
+    const available = quiz.available ? new Date(quiz.available).getTime() : null;
+    const until = quiz.until ? new Date(quiz.until).getTime() : null;
 
-    if (!available && !until) return "Available";
+    if (!available && !until) return "Available";          // no dates at all
     if (available && now < available) return `Not available until ${quiz.available}`;
     if (until && now > until) return "Closed";
     if (available && until && now >= available && now <= until) return "Available";
     if (available && now >= available) return "Available";
 
-    return "Available";
+    return "Available"; // fallback
+  }
+
+  function getTimeOrZero(date?: string | null) {
+    return date ? new Date(date).getTime() : 0; // fallback for missing dates
   }
 
   return (
@@ -87,57 +91,40 @@ export default function Quizzes() {
         </ListGroupItem>
         
         {quizzes
-          // Students only see published quizzes
-          .filter((q: any) => {
-            if (role === "STUDENT") {
-              return q.published === true;
-            }
-            return true; // Faculty see all quizzes
-          })
-          .slice()
-          .sort((a: any, b: any) => new Date(a.due).getTime() - new Date(b.due).getTime())
-          .map((quiz: any) => (
-            <ListGroupItem key={quiz._id} className="wd-module p-0 fs-5 border-gray">
+          .filter((q: any) => role === "STUDENT" ? q.published : true)
+          .sort((a: any, b: any) => getTimeOrZero(a.available) - getTimeOrZero(b.available))
+          .map((quiz: any, index: number) => (
+            <ListGroupItem key={quiz._id ?? index} className="wd-module p-0 fs-5 border-gray">
               <Row className="align-items-center">
                 <Col xs="auto" className="d-flex align-items-center">
                   <BsGripVertical className="me-2 fs-3" />
-                  {/* Only faculty can see edit icon */}
                   {role !== "STUDENT" && <BsPencilSquare />}
                 </Col>
-
                 <Col>
-                  <Link
-                    href={`/Courses/${cid}/Quizzes/${quiz._id}`}
-                    className="wd-quiz-link"
-                  >
+                  <Link href={`/Courses/${cid}/Quizzes/${quiz._id}`} className="wd-quiz-link">
                     {quiz.title}
                   </Link>
                   <br />
-                    Multiple Modules | <b>{getAvailabilityStatus(quiz)}</b> |
-                    <b> Due</b> {quiz.due} | {quiz.points} pts | {quiz.questionTotal} Questions
+                  Multiple Modules | <b>{getAvailabilityStatus(quiz)}</b> | <b>Due</b> {quiz.due} | {quiz.points} pts | {quiz.questionTotal} Questions
                 </Col>
-
                 <Col>
-                  {/* Only faculty can delete/publish */}
                   {role !== "STUDENT" && (
                     <LessonControlButtons
                       quiz={quiz}
                       deleteQuiz={async (quizID: string) => {
-                        try {
-                          await client.deleteQuiz(quizID);
-                          dispatch(deleteQuiz(quizID));
-                        } catch (err) {
-                          console.error(err);
-                        }
+                        await client.deleteQuiz(quizID);
+                        dispatch(deleteQuiz(quizID));
                       }}
                       togglePublish={async (quizID: string) => {
                         try {
                           const updatedQuiz = await client.togglePublish(quizID);
-                          // Update the specific quiz in the Redux state
-                          const updatedQuizzes = quizzes.map((q: any) => 
-                            q._id === quizID ? updatedQuiz : q
-                          );
-                          dispatch(setQuiz(updatedQuizzes));
+                          if (!updatedQuiz) return; // fail-safe if quiz not found
+
+                          dispatch(setQuiz(quizzes.map((q: any) =>
+                            q._id === quizID
+                              ? { ...q, published: updatedQuiz.published } // only update the published field
+                              : q
+                          )));
                         } catch (err) {
                           console.error(err);
                         }

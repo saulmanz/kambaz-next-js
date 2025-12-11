@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import questionSchema from "../Questions/schema.js";
 
 const QuizSchema = new mongoose.Schema({
   _id: String,
@@ -30,7 +31,7 @@ const QuizSchema = new mongoose.Schema({
     }
   ],
   questions: [
-    {}
+    {questionSchema}
   ],
   published: { type: Boolean, default: false}
 }, { collection: "quizzes" });

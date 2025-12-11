@@ -35,7 +35,6 @@ export default function LessonControlButtons({
           className="position-absolute bg-white border rounded shadow p-2"
           style={{ right: 0, zIndex: 1000 }}
         >
-          {/* EDIT */}
           <Link
             href={`/Courses/${quiz.course}/Quizzes/${quiz._id}`}
             className="dropdown-item d-flex align-items-center gap-2"
@@ -44,7 +43,6 @@ export default function LessonControlButtons({
             <FaEdit /> Edit
           </Link>
 
-          {/* DELETE */}
           <div
             className="dropdown-item d-flex align-items-center gap-2 text-danger"
             style={{ cursor: "pointer" }}
@@ -56,7 +54,6 @@ export default function LessonControlButtons({
             <FaTrash /> Delete
           </div>
 
-          {/* PUBLISH / UNPUBLISH */}
           <div
             className="dropdown-item d-flex align-items-center gap-2"
             style={{ cursor: "pointer" }}

@@ -21,7 +21,6 @@ const quizzesSlice = createSlice({
       state.quizzes.push(action.payload);
     },
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     updateQuiz(state, action: PayloadAction<any>) {
       state.quizzes = state.quizzes.map((a) =>
         a._id === action.payload._id ? action.payload : a

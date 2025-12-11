@@ -1,8 +1,6 @@
 import QuestionsDao from "../Questions/dao.js";
-import QuizzesDao from "../Quizzes/dao.js";
 
 export default function QuestionsRoutes(app) {
-  const quizDao = QuizzesDao();
   const dao = QuestionsDao();
 
   app.get("/api/courses/:courseId/:quizId/questions", async (req, res) => {
