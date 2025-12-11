@@ -28,6 +28,7 @@ interface StudentScore {
   studentId: number | string;
   lastScore: number;
   attempt: number;
+  answers?: { [key: string]: any };
 }
 
 interface Quiz {
@@ -37,6 +38,8 @@ interface Quiz {
   points: number;
   timeLimit: number;
   showCorrect: boolean;
+  multipleAttempts: boolean;
+  maxAttempts: number | null;
   questions: Question[];
   studentScores?: StudentScore[];
 }
@@ -85,6 +88,10 @@ export default function QuizPreview() {
             // Calculate percentage score
             const percentage = q.points > 0 ? (studentScoreEntry.lastScore / q.points) * 100 : 0;
             setScore(percentage);
+            // Load previous answers if they exist
+            if (studentScoreEntry.answers) {
+              setAnswers(studentScoreEntry.answers);
+            }
           }
         }
         
@@ -135,6 +142,26 @@ export default function QuizPreview() {
     return { earnedPoints, totalPoints };
   }, [quiz, answers]);
 
+  // Check if a specific question was answered correctly
+  const isQuestionCorrect = useCallback((question: Question): boolean => {
+    if (!question) return false;
+    const userAnswer = answers[question._id];
+
+    if (question.type === "MCQ" && question.options) {
+      const correctIndex = question.options.findIndex((opt: any) => opt.correct);
+      return userAnswer === correctIndex;
+    } else if (question.type === "TF" && question.answer) {
+      return userAnswer === question.answer;
+    } else if (question.type === "FIB" && question.answers) {
+      const userAnswerLower = (userAnswer || "").toLowerCase().trim();
+      return question.answers.some(
+        (ans: string) => ans.toLowerCase().trim() === userAnswerLower
+      );
+    }
+
+    return false;
+  }, [answers]);
+
   // Timer countdown
   useEffect(() => {
     if (timeRemaining === null || timeRemaining <= 0 || isPreview || submitted) return;
@@ -148,8 +175,8 @@ export default function QuizPreview() {
           const percentage = totalPoints > 0 ? (earnedPoints / totalPoints) * 100 : 0;
           setScore(percentage);
           if (!isPreview && currentUser && qid && role === "STUDENT") {
-            // Save score to database
-            client.submitQuizScore(qid.toString(), currentUser._id, earnedPoints)
+            // Save score to database with answers
+            client.submitQuizScore(qid.toString(), currentUser._id, earnedPoints, answers)
               .then(async (updatedQuiz) => {
                 setQuiz(updatedQuiz);
                 setHasTakenQuiz(true);
@@ -161,6 +188,10 @@ export default function QuizPreview() {
                   );
                   if (studentScoreEntry) {
                     setStudentScore(studentScoreEntry);
+                    // Update answers state with saved answers
+                    if (studentScoreEntry.answers) {
+                      setAnswers(studentScoreEntry.answers);
+                    }
                   }
                 }
                 alert("Time is up! Quiz has been submitted.");
@@ -177,7 +208,7 @@ export default function QuizPreview() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeRemaining, isPreview, submitted, cid, router, calculateScore, currentUser, qid, role]);
+  }, [timeRemaining, isPreview, submitted, cid, router, calculateScore, currentUser, qid, role, answers]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -210,7 +241,7 @@ export default function QuizPreview() {
     // Save score to database for students
     if (currentUser && qid && role === "STUDENT") {
       try {
-        await client.submitQuizScore(qid.toString(), currentUser._id, earnedPoints);
+        await client.submitQuizScore(qid.toString(), currentUser._id, earnedPoints, answers);
         // Reload quiz to get updated studentScores
         const updatedQuiz = await client.findQuizById(qid.toString());
         setQuiz(updatedQuiz);
@@ -223,6 +254,10 @@ export default function QuizPreview() {
           );
           if (studentScoreEntry) {
             setStudentScore(studentScoreEntry);
+            // Update answers state with saved answers
+            if (studentScoreEntry.answers) {
+              setAnswers(studentScoreEntry.answers);
+            }
           }
         }
       } catch (err) {
@@ -241,9 +276,27 @@ export default function QuizPreview() {
     setAnswers({});
     setSubmitted(false);
     setScore(null);
+    setHasTakenQuiz(false);
+    setStudentScore(null);
     if (quiz?.timeLimit && !isPreview && quiz.questions && quiz.questions.length > 0) {
       setTimeRemaining(quiz.timeLimit * 60);
     }
+  };
+
+  // Check if student can retake the quiz
+  const canRetakeQuiz = () => {
+    if (isPreview) return false; // Faculty can always retake in preview
+    if (!quiz?.multipleAttempts) return false; // Multiple attempts must be enabled
+    if (!studentScore) return false; // Must have taken the quiz at least once
+    
+    const currentAttempt = studentScore.attempt || 0;
+    const maxAttempts = quiz.maxAttempts;
+    
+    // If maxAttempts is null, unlimited attempts allowed
+    if (maxAttempts === null || maxAttempts === undefined) return true;
+    
+    // Check if current attempt is less than max attempts
+    return currentAttempt < maxAttempts;
   };
 
   if (loading) {
@@ -270,7 +323,28 @@ export default function QuizPreview() {
       {/* Already Taken Banner for Students */}
       {hasTakenQuiz && role === "STUDENT" && (
         <Alert variant="info" className="mb-4">
-          <strong>Quiz Already Completed</strong> - You have already taken this quiz. Your answers are shown below in read-only mode.
+          <div className="d-flex justify-content-between align-items-center">
+            <div>
+              <strong>Quiz Already Completed</strong> - You have already taken this quiz. Your answers are shown below in read-only mode.
+              {studentScore && (
+                <div className="mt-2">
+                  Attempt {studentScore.attempt}
+                  {quiz.maxAttempts && ` of ${quiz.maxAttempts}`}
+                  {!quiz.maxAttempts && " (unlimited attempts allowed)"}
+                </div>
+              )}
+            </div>
+            {canRetakeQuiz() && (
+              <Button variant="outline-primary" onClick={handleRetakeQuiz}>
+                Take Quiz Again
+              </Button>
+            )}
+            {!canRetakeQuiz() && quiz.multipleAttempts && (
+              <div className="text-muted">
+                Maximum attempts reached
+              </div>
+            )}
+          </div>
         </Alert>
       )}
 
@@ -340,15 +414,37 @@ export default function QuizPreview() {
       )}
 
       {/* Questions */}
-      <div className={`mb-4 ${hasTakenQuiz ? "opacity-50" : ""}`} style={hasTakenQuiz ? { opacity: 0.6 } : {}}>
-        {questions.map((question, index) => (
-          <Card key={question._id || index} className="mb-3">
+      <div className={`mb-4 ${hasTakenQuiz && !canRetakeQuiz() ? "opacity-50" : ""}`} style={hasTakenQuiz && !canRetakeQuiz() ? { opacity: 0.6 } : {}}>
+        {questions.map((question, index) => {
+          // Determine if question was answered correctly (only show for completed quizzes)
+          const isCorrect = hasTakenQuiz && !canRetakeQuiz() && submitted ? isQuestionCorrect(question) : null;
+          const borderColor = isCorrect === true ? "success" : isCorrect === false ? "danger" : "secondary";
+          
+          return (
+          <Card 
+            key={question._id || index} 
+            className="mb-3"
+            border={hasTakenQuiz && !canRetakeQuiz() && submitted ? borderColor : undefined}
+            style={
+              hasTakenQuiz && !canRetakeQuiz() && submitted
+                ? {
+                    borderWidth: "3px",
+                    backgroundColor: isCorrect === true ? "rgba(25, 135, 84, 0.1)" : isCorrect === false ? "rgba(220, 53, 69, 0.1)" : undefined
+                  }
+                : {}
+            }
+          >
             <Card.Body>
               <div className="d-flex justify-content-between align-items-start mb-3">
                 <h5>
                   Question {index + 1} 
                   {question.points && (
                     <Badge bg="secondary" className="ms-2">{question.points} pts</Badge>
+                  )}
+                  {hasTakenQuiz && !canRetakeQuiz() && submitted && isCorrect !== null && (
+                    <Badge bg={isCorrect ? "success" : "danger"} className="ms-2">
+                      {isCorrect ? "✓ Correct" : "✗ Incorrect"}
+                    </Badge>
                   )}
                 </h5>
               </div>
@@ -369,7 +465,7 @@ export default function QuizPreview() {
                         label={option.text}
                         checked={answers[question._id] === optIndex}
                         onChange={() => handleAnswerChange(question._id, optIndex)}
-                        disabled={submitted || hasTakenQuiz}
+                        disabled={submitted || (hasTakenQuiz && !canRetakeQuiz())}
                       />
                     </div>
                   ))}
@@ -386,7 +482,7 @@ export default function QuizPreview() {
                     label="True"
                     checked={answers[question._id] === "True"}
                     onChange={() => handleAnswerChange(question._id, "True")}
-                    disabled={submitted || hasTakenQuiz}
+                    disabled={submitted || (hasTakenQuiz && !canRetakeQuiz())}
                   />
                   <FormCheck
                     type="radio"
@@ -395,7 +491,7 @@ export default function QuizPreview() {
                     label="False"
                     checked={answers[question._id] === "False"}
                     onChange={() => handleAnswerChange(question._id, "False")}
-                    disabled={submitted || hasTakenQuiz}
+                    disabled={submitted || (hasTakenQuiz && !canRetakeQuiz())}
                     className="mt-2"
                   />
                 </div>
@@ -409,17 +505,18 @@ export default function QuizPreview() {
                     placeholder="Enter your answer"
                     value={answers[question._id] || ""}
                     onChange={(e) => handleAnswerChange(question._id, e.target.value)}
-                    disabled={submitted || hasTakenQuiz}
+                    disabled={submitted || (hasTakenQuiz && !canRetakeQuiz())}
                   />
                 </div>
               )}
             </Card.Body>
           </Card>
-        ))}
+          );
+        })}
       </div>
 
-      {/* Submit Button - Only show if quiz hasn't been taken and has questions */}
-      {!hasTakenQuiz && questions.length > 0 && (
+      {/* Submit Button - Show if quiz has questions and (hasn't been taken OR can retake) */}
+      {questions.length > 0 && (!hasTakenQuiz || (hasTakenQuiz && canRetakeQuiz() && !submitted)) && (
         <div className="d-flex justify-content-end mb-4">
           <Button 
             variant="primary" 

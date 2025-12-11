@@ -66,10 +66,11 @@ export const deleteQuestion = async (questionId: string) => {
   return response.data;
 };
 
-export const submitQuizScore = async (quizId: string, studentId: string, score: number) => {
+export const submitQuizScore = async (quizId: string, studentId: string, score: number, answers: { [key: string]: any } = {}) => {
   const response = await axios.post(`${QUIZZES_API}/${quizId}/submit`, {
     studentId,
-    score
+    score,
+    answers
   });
   return response.data;
 };

@@ -11,6 +11,7 @@ import QuestionPreview from "./QuestionPreview";
 
 export default function QuizQuestionsTab({
   cid,
+  quiz,
   questions,
   setQuestions,
   editingQuestion,
@@ -223,8 +224,8 @@ export default function QuizQuestionsTab({
         <Button variant="danger" size="lg" onClick={save}>
           Save
         </Button>
-        <Button variant="success" size="lg" onClick={saveAndPublish}>
-          Save & Publish
+        <Button variant={quiz?.published ? "danger" : "success"} size="lg" onClick={saveAndPublish}>
+          {quiz?.published ? "Save & Unpublish" : "Save & Publish"}
         </Button>
       </div>
     </div>

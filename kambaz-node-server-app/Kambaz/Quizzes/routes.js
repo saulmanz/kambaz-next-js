@@ -62,11 +62,11 @@ export default function QuizzesRoutes(app) {
 
   app.post("/api/quizzes/:quizId/submit", async (req, res) => {
     try {
-      const { studentId, score } = req.body;
+      const { studentId, score, answers } = req.body;
       if (!studentId || score === undefined) {
         return res.status(400).json({ error: "studentId and score are required" });
       }
-      const updated = await dao.submitQuizScore(req.params.quizId, studentId, score);
+      const updated = await dao.submitQuizScore(req.params.quizId, studentId, score, answers || {});
       res.json(updated);
     } catch (e) {
       res.status(500).json({ error: e.message });

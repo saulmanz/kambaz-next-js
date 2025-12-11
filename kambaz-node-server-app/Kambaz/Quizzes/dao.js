@@ -46,7 +46,7 @@ export default function QuizzesDao() {
     return quiz.save();
   };
 
-  const submitQuizScore = async (quizId, studentId, score) => {
+  const submitQuizScore = async (quizId, studentId, score, answers = {}) => {
     const quiz = await model.findOne({ _id: quizId }).exec();
     if (!quiz) return null;
 
@@ -67,7 +67,8 @@ export default function QuizzesDao() {
     const scoreEntry = {
       studentId: studentId,
       lastScore: score,
-      attempt: attempt
+      attempt: attempt,
+      answers: answers // Store student's answers
     };
 
     if (existingScoreIndex >= 0) {

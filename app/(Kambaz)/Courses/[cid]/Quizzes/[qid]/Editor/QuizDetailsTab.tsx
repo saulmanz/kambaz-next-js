@@ -88,8 +88,29 @@ export default function QuizDetailsTab({
             type="checkbox"
             label="Multiple Attempts"
             checked={quiz.multipleAttempts}
-            onChange={(e) => setQuiz({ ...quiz, multipleAttempts: e.target.checked })}
+            onChange={(e) => {
+              const newValue = e.target.checked;
+              setQuiz({ 
+                ...quiz, 
+                multipleAttempts: newValue,
+                maxAttempts: newValue ? (quiz.maxAttempts || 3) : null // Default to 3 if enabling
+              });
+            }}
           />
+          {quiz.multipleAttempts && (
+            <div className="ms-4 mb-2">
+              <FormLabel>Maximum Attempts</FormLabel>
+              <FormControl
+                type="number"
+                min={1}
+                value={quiz.maxAttempts || ""}
+                onChange={(e) => setQuiz({ ...quiz, maxAttempts: e.target.value ? Number(e.target.value) : null })}
+                placeholder="Unlimited"
+                style={{ maxWidth: "150px" }}
+              />
+              <small className="text-muted">Leave empty for unlimited attempts</small>
+            </div>
+          )}
           <FormCheck
             type="checkbox"
             label="One Question at a Time"
@@ -187,7 +208,9 @@ export default function QuizDetailsTab({
         </Link>
 
         <Button variant="danger" size="lg" onClick={save}>Save</Button>
-        <Button variant="success" size="lg" onClick={saveAndPublish}>Save & Publish</Button>
+        <Button variant={quiz.published ? "danger" : "success"} size="lg" onClick={saveAndPublish}>
+          {quiz.published ? "Save & Unpublish" : "Save & Publish"}
+        </Button>
       </div>
     </>
   );

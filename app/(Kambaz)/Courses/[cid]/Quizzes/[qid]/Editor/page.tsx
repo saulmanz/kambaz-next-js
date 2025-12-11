@@ -31,6 +31,7 @@ export default function QuizEditor() {
     group: "Quizzes",
     shuffleAnswers: true,
     multipleAttempts: false,
+    maxAttempts: null,
     oneQuestion: false,
     webcamRequired: false,
     lockQuestions: false,
@@ -39,7 +40,8 @@ export default function QuizEditor() {
     accessCode: "",
     questionTotal: 100,
     studentScores: [],
-    questions: []
+    questions: [],
+    published: false
   });
 
   const [questions, setQuestions] = useState<any[]>(quiz.questions || []);
@@ -69,6 +71,7 @@ export default function QuizEditor() {
           group: q.group ?? "Quizzes",
           shuffleAnswers: q.shuffleAnswers ?? true,
           multipleAttempts: q.multipleAttempts ?? false,
+          maxAttempts: q.maxAttempts ?? null,
           oneQuestion: q.oneQuestion ?? false,
           webcamRequired: q.webcamRequired ?? false,
           lockQuestions: q.lockQuestions ?? false,
@@ -77,7 +80,8 @@ export default function QuizEditor() {
           accessCode: q.accessCode ?? "",
           questionTotal: q.questionTotal ?? 100,
           studentScores: q.studentScores ?? [],
-          questions: q.questions ?? []
+          questions: q.questions ?? [],
+          published: q.published ?? false
         };
         setQuiz(loadedQuiz);
         setQuestions(loadedQuiz.questions || []);
@@ -195,6 +199,7 @@ export default function QuizEditor() {
       {activeTab === "questions" && (
         <QuizQuestionsTab
           cid={cid}
+          quiz={quiz}
           questions={questions}
           setQuestions={setQuestions}
           editingQuestion={editingQuestion}

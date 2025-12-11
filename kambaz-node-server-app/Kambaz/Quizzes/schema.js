@@ -14,6 +14,7 @@ const QuizSchema = new mongoose.Schema({
   group: { type: String, default: "Quizzes" },
   shuffleAnswers: { type: Boolean, default: true },
   multipleAttempts: { type: Boolean, default: false },
+  maxAttempts: { type: Number, default: null }, // null means unlimited attempts
   oneQuestion: { type: Boolean, default: false },
   webcamRequired: { type: Boolean, default: false },
   lockQuestions: { type: Boolean, default: false },
@@ -25,6 +26,7 @@ const QuizSchema = new mongoose.Schema({
       studentId: { type: mongoose.Schema.Types.Mixed }, // Allow both String and Number
       lastScore: Number,
       attempt: Number,
+      answers: { type: mongoose.Schema.Types.Mixed, default: {} }, // Store student's answers as object
     }
   ],
   questions: [
