@@ -22,7 +22,7 @@ const QuizSchema = new mongoose.Schema({
   accessCode: { type: String, default: 0 },
   studentScores: [
     {
-      studentId: Number,
+      studentId: { type: mongoose.Schema.Types.Mixed }, // Allow both String and Number
       lastScore: Number,
       attempt: Number,
     }

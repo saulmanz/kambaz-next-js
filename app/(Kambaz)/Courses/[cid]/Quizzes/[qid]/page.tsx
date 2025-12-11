@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   Button,
   Col,
@@ -9,6 +9,7 @@ import {
   Card
 } from "react-bootstrap";
 import { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
 
 import * as client from "../client";
 
@@ -36,6 +37,9 @@ interface Quiz {
 
 export default function QuizDetails() {
   const { cid, qid } = useParams();
+  const router = useRouter();
+  const currentUser = useSelector((state: any) => state.accountReducer.currentUser);
+  const role = currentUser?.role?.toUpperCase();
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -49,6 +53,11 @@ export default function QuizDetails() {
       try {
         const q = await client.findQuizById(qid.toString());
         setQuiz(q);
+        
+        // Redirect students directly to Preview/Take Quiz page
+        if (role === "STUDENT") {
+          router.push(`/Courses/${cid}/Quizzes/${qid}/Preview`);
+        }
       } catch (err) {
         console.error("Failed to load quiz:", err);
       } finally {
@@ -57,7 +66,7 @@ export default function QuizDetails() {
     };
 
     loadQuiz();
-  }, [qid]);
+  }, [qid, cid, role, router]);
 
   if (loading) {
     return <div>Loading quiz details...</div>;

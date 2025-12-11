@@ -88,7 +88,12 @@ export default function Quizzes() {
         
         {quizzes
           // Students only see published quizzes
-          .filter((q: any) => role !== "STUDENT" || q.published)
+          .filter((q: any) => {
+            if (role === "STUDENT") {
+              return q.published === true;
+            }
+            return true; // Faculty see all quizzes
+          })
           .slice()
           .sort((a: any, b: any) => new Date(a.due).getTime() - new Date(b.due).getTime())
           .map((quiz: any) => (
@@ -128,7 +133,11 @@ export default function Quizzes() {
                       togglePublish={async (quizID: string) => {
                         try {
                           const updatedQuiz = await client.togglePublish(quizID);
-                          dispatch(setQuiz(quizzes.map((q: any) => q._id === quizID ? updatedQuiz : q)));
+                          // Update the specific quiz in the Redux state
+                          const updatedQuizzes = quizzes.map((q: any) => 
+                            q._id === quizID ? updatedQuiz : q
+                          );
+                          dispatch(setQuiz(updatedQuizzes));
                         } catch (err) {
                           console.error(err);
                         }

@@ -39,10 +39,45 @@ export default function QuizzesDao() {
   };
 
   const togglePublish = async (quizId) => {
-    const quiz = await model.findById(quizId).exec();
+    const quiz = await model.findOne({ _id: quizId }).exec();
     if (!quiz) return null;
 
     quiz.published = !quiz.published;
+    return quiz.save();
+  };
+
+  const submitQuizScore = async (quizId, studentId, score) => {
+    const quiz = await model.findOne({ _id: quizId }).exec();
+    if (!quiz) return null;
+
+    // Initialize studentScores if it doesn't exist
+    if (!quiz.studentScores) {
+      quiz.studentScores = [];
+    }
+
+    // Find existing score entry for this student
+    const existingScoreIndex = quiz.studentScores.findIndex(
+      (s) => String(s.studentId) === String(studentId) || s.studentId === studentId
+    );
+
+    const attempt = existingScoreIndex >= 0 
+      ? (quiz.studentScores[existingScoreIndex].attempt || 0) + 1
+      : 1;
+
+    const scoreEntry = {
+      studentId: studentId,
+      lastScore: score,
+      attempt: attempt
+    };
+
+    if (existingScoreIndex >= 0) {
+      // Update existing score
+      quiz.studentScores[existingScoreIndex] = scoreEntry;
+    } else {
+      // Add new score entry
+      quiz.studentScores.push(scoreEntry);
+    }
+
     return quiz.save();
   };
 
@@ -52,6 +87,7 @@ export default function QuizzesDao() {
     createQuiz,
     updateQuiz,
     deleteQuiz,
-    togglePublish
+    togglePublish,
+    submitQuizScore
   };
 }

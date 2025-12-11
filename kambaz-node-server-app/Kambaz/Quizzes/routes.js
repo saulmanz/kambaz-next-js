@@ -59,4 +59,17 @@ export default function QuizzesRoutes(app) {
       res.status(500).json({ error: e.message });
     }
   });
+
+  app.post("/api/quizzes/:quizId/submit", async (req, res) => {
+    try {
+      const { studentId, score } = req.body;
+      if (!studentId || score === undefined) {
+        return res.status(400).json({ error: "studentId and score are required" });
+      }
+      const updated = await dao.submitQuizScore(req.params.quizId, studentId, score);
+      res.json(updated);
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
 }
