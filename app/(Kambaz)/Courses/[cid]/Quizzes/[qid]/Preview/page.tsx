@@ -88,8 +88,8 @@ export default function QuizPreview() {
           }
         }
         
-        // Initialize timer if time limit exists and quiz not already taken
-        if (q.timeLimit && !isPreview && !quizTaken) {
+        // Initialize timer if time limit exists, quiz not already taken, and quiz has questions
+        if (q.timeLimit && !isPreview && !quizTaken && q.questions && q.questions.length > 0) {
           setTimeRemaining(q.timeLimit * 60); // Convert minutes to seconds
         }
       } catch (err) {
@@ -241,7 +241,7 @@ export default function QuizPreview() {
     setAnswers({});
     setSubmitted(false);
     setScore(null);
-    if (quiz?.timeLimit && !isPreview) {
+    if (quiz?.timeLimit && !isPreview && quiz.questions && quiz.questions.length > 0) {
       setTimeRemaining(quiz.timeLimit * 60);
     }
   };
@@ -418,8 +418,8 @@ export default function QuizPreview() {
         ))}
       </div>
 
-      {/* Submit Button - Only show if quiz hasn't been taken */}
-      {!hasTakenQuiz && (
+      {/* Submit Button - Only show if quiz hasn't been taken and has questions */}
+      {!hasTakenQuiz && questions.length > 0 && (
         <div className="d-flex justify-content-end mb-4">
           <Button 
             variant="primary" 
@@ -434,7 +434,10 @@ export default function QuizPreview() {
 
       {questions.length === 0 && (
         <Alert variant="info">
-          This quiz has no questions yet. Please add questions in the editor.
+          {isPreview 
+            ? "This quiz has no questions yet. Please add questions in the editor."
+            : "This quiz has no questions yet. Come back later."
+          }
         </Alert>
       )}
     </div>

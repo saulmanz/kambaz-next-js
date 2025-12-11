@@ -43,7 +43,20 @@ export default function QuizDetails() {
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Redirect students immediately before loading any quiz data
   useEffect(() => {
+    if (role === "STUDENT" && qid) {
+      router.replace(`/Courses/${cid}/Quizzes/${qid}/Preview`);
+      return;
+    }
+  }, [role, qid, cid, router]);
+
+  useEffect(() => {
+    // Don't load quiz data if user is a student (they should be redirected)
+    if (role === "STUDENT") {
+      return;
+    }
+
     if (!qid) {
       setQuiz((prev: any) => ({ ...prev, _id: "", course: cid ?? prev.course }));
       return;
@@ -53,11 +66,6 @@ export default function QuizDetails() {
       try {
         const q = await client.findQuizById(qid.toString());
         setQuiz(q);
-        
-        // Redirect students directly to Preview/Take Quiz page
-        if (role === "STUDENT") {
-          router.push(`/Courses/${cid}/Quizzes/${qid}/Preview`);
-        }
       } catch (err) {
         console.error("Failed to load quiz:", err);
       } finally {
@@ -66,7 +74,12 @@ export default function QuizDetails() {
     };
 
     loadQuiz();
-  }, [qid, cid, role, router]);
+  }, [qid, cid, role]);
+
+  // Don't render anything for students - they should be redirected
+  if (role === "STUDENT") {
+    return <div>Redirecting...</div>;
+  }
 
   if (loading) {
     return <div>Loading quiz details...</div>;
