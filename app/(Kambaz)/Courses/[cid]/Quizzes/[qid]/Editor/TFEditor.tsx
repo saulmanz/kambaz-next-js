@@ -7,10 +7,11 @@ export function TFEditor({ question, index, onChange }: any) {
       <FormLabel>Question Text</FormLabel>
 
       <FormControl
-        type="text"
-        value={question.name || ""}
+        as="textarea"
+        rows={2}
+        value={question.question || ""}
         onChange={(e) =>
-          onChange(index, { ...question, name: e.target.value })
+          onChange(index, { ...question, question: e.target.value })
         }
       />
 

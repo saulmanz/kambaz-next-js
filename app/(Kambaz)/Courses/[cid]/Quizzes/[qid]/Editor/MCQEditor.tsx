@@ -26,37 +26,15 @@ export function MCQEditor({ question, index, onChange }: MCQEditorProps) {
     onChange(index, { ...question, options: newOptions });
   };
 
-  const updateText = (i: number, text: string) => {
-    const updated = options.map((opt, idx) =>
-      idx === i ? { ...opt, text } : opt
-    );
-    update(updated);
-  };
-
-  const toggleCorrect = (i: number) => {
-    const updated = options.map((opt, idx) =>
-      idx === i ? { ...opt, correct: !opt.correct } : opt
-    );
-    update(updated);
-  };
-
-  const addOption = () => {
-    update([...options, { text: "New Option", correct: false }]);
-  };
-
-  const removeOption = (i: number) => {
-    const updated = options.filter((_, idx) => idx !== i);
-    update(updated);
-  };
-
   return (
     <div className="mt-3 p-3 border rounded">
       <FormLabel>Question Text</FormLabel>
       <FormControl
-        type="text"
-        defaultValue={question.name}
+        as="textarea"
+        rows={2}
+        value={question.question || ""}
         onChange={(e) =>
-          onChange(index, { ...question, name: e.target.value })
+          onChange(index, { ...question, question: e.target.value })
         }
       />
 
@@ -68,29 +46,41 @@ export function MCQEditor({ question, index, onChange }: MCQEditorProps) {
           <FormCheck
             type="checkbox"
             checked={opt.correct}
-            onChange={() => toggleCorrect(i)}
+            onChange={() =>
+              update(options.map((o, idx) =>
+                idx === i ? { ...o, correct: !o.correct } : o
+              ))
+            }
           />
 
           <FormControl
             type="text"
             value={opt.text}
-            onChange={(e) => updateText(i, e.target.value)}
+            onChange={(e) =>
+              update(options.map((o, idx) =>
+                idx === i ? { ...o, text: e.target.value } : o
+              ))
+            }
           />
 
           <Button
             variant="outline-danger"
             size="sm"
-            onClick={() => removeOption(i)}
+            onClick={() =>
+              update(options.filter((_, idx) => idx !== i))
+            }
           >
             ✕
           </Button>
         </div>
       ))}
-      <br/>
 
-      <Button size="sm" onClick={addOption}>
+      <br />
+
+      <Button size="sm" onClick={() => update([...options, { text: "", correct: false }])}>
         Add Option
       </Button>
     </div>
   );
 }
+

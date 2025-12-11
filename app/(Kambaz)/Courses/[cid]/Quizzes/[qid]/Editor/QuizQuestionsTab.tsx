@@ -46,7 +46,7 @@ export default function QuizQuestionsTab({
   return (
     <div>
       <Button variant="primary" onClick={addQuestion}>Add Question</Button>
-      <hr />
+      <hr />  
 
       <ListGroup>
         {questions.map((q: any, index: number) => {

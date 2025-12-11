@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { 
   Button, 
   Card, 
@@ -21,7 +21,8 @@ interface Question {
   points: number;
   options?: Array<{ text: string; correct: boolean }>;
   answer?: string;
-  answers?: string[];
+  answers?: { blankText?: string; correctAnswers: string[] }[];
+  question?: string
 }
 
 interface StudentScore {
@@ -46,11 +47,10 @@ interface Quiz {
 
 export default function QuizPreview() {
   const { cid, qid } = useParams();
-  const router = useRouter();
   const currentUser = useSelector((state: any) => state.accountReducer.currentUser);
   const role = currentUser?.role?.toUpperCase();
   const isPreview = role !== "STUDENT";
-  
+
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [loading, setLoading] = useState(true);
   const [answers, setAnswers] = useState<{ [key: string]: any }>({});
@@ -61,44 +61,32 @@ export default function QuizPreview() {
   const [hasTakenQuiz, setHasTakenQuiz] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
+  // Load quiz
   useEffect(() => {
     if (!qid) return;
-
     const loadQuiz = async () => {
       try {
         const q = await client.findQuizById(qid.toString());
         setQuiz(q);
-        
+
         // Check if student has already taken this quiz
         let quizTaken = false;
         if (role === "STUDENT" && currentUser && q.studentScores) {
-          const userId = currentUser._id;
-          // Try to match by string ID or convert to number
           const studentScoreEntry = q.studentScores.find(
-            (score: StudentScore) => 
-              String(score.studentId) === String(userId) || 
-              score.studentId === Number(userId) ||
-              score.studentId === userId
+            (s: StudentScore) => String(s.studentId) === String(currentUser._id)
           );
-          
           if (studentScoreEntry) {
             setStudentScore(studentScoreEntry);
             quizTaken = true;
             setHasTakenQuiz(true);
-            setSubmitted(true); // Mark as submitted to show read-only
-            // Calculate percentage score
-            const percentage = q.points > 0 ? (studentScoreEntry.lastScore / q.points) * 100 : 0;
-            setScore(percentage);
-            // Load previous answers if they exist
-            if (studentScoreEntry.answers) {
-              setAnswers(studentScoreEntry.answers);
-            }
+            setSubmitted(true);
+            setScore(q.points > 0 ? (studentScoreEntry.lastScore / q.points) * 100 : 0);
+            if (studentScoreEntry.answers) setAnswers(studentScoreEntry.answers);
           }
         }
-        
-        // Initialize timer if time limit exists, quiz not already taken, and quiz has questions
-        if (q.timeLimit && !isPreview && !quizTaken && q.questions && q.questions.length > 0) {
-          setTimeRemaining(q.timeLimit * 60); // Convert minutes to seconds
+
+        if (q.timeLimit && !isPreview && !quizTaken && q.questions?.length) {
+          setTimeRemaining(q.timeLimit * 60);
         }
       } catch (err) {
         console.error("Failed to load quiz:", err);
@@ -106,602 +94,198 @@ export default function QuizPreview() {
         setLoading(false);
       }
     };
-
     loadQuiz();
-  }, [qid, isPreview, role, currentUser]);
+  }, [qid, role, currentUser, isPreview]);
 
-  const calculateScore = useCallback((): { earnedPoints: number; totalPoints: number } => {
-    if (!quiz) return { earnedPoints: 0, totalPoints: 0 };
-    
-    let totalPoints = 0;
-    let earnedPoints = 0;
+  // FIB grading: all blanks must match
+  const isFIBCorrect = (question: Question): boolean => {
+    const userAnswersForQuestion = Array.isArray(answers[question._id]) ? answers[question._id] : [];
+    return question.answers?.every((blank, idx) => {
+      const userAns = String(userAnswersForQuestion[idx] || "").toLowerCase().trim();
+      return blank.correctAnswers.some(ans => ans.toLowerCase().trim() === userAns);
+    }) ?? false;
+  };
 
-    quiz.questions.forEach((question) => {
-      totalPoints += question.points || 0;
-      const userAnswer = answers[question._id];
-
-      if (question.type === "MCQ" && question.options) {
-        // Get all correct option indices
-        const correctIndices = question.options
-          .map((opt: any, idx: number) => opt.correct ? idx : -1)
-          .filter((idx: number) => idx !== -1);
-        
-        // Get user's selected indices (handle both array and single value)
-        const userSelections = Array.isArray(userAnswer) ? userAnswer : (userAnswer !== undefined ? [userAnswer] : []);
-        
-        // Check if user selected exactly the correct answers (all correct, none incorrect)
-        const selectedCorrect = userSelections.filter((idx: number) => correctIndices.includes(idx));
-        const selectedIncorrect = userSelections.filter((idx: number) => !correctIndices.includes(idx));
-        
-        // Only award points if all correct answers are selected and no incorrect answers
-        if (selectedCorrect.length === correctIndices.length && selectedIncorrect.length === 0) {
-          earnedPoints += question.points || 0;
-        }
-      } else if (question.type === "TF" && question.answer) {
-        if (userAnswer === question.answer) {
-          earnedPoints += question.points || 0;
-        }
-      } else if (question.type === "FIB" && question.answers) {
-        const userAnswerLower = (userAnswer || "").toLowerCase().trim();
-        const isCorrect = question.answers.some(
-          (ans: any) => {
-            // Handle both object format { text: "answer" } and string format
-            const correctAnswer = typeof ans === "string" ? ans : (ans?.text || ans);
-            return String(correctAnswer || "").toLowerCase().trim() === userAnswerLower;
-          }
-        );
-        if (isCorrect) {
-          earnedPoints += question.points || 0;
-        }
-      }
-    });
-
-    return { earnedPoints, totalPoints };
-  }, [quiz, answers]);
-
-  // Check if a specific question was answered correctly
   const isQuestionCorrect = useCallback((question: Question): boolean => {
-    if (!question) return false;
     const userAnswer = answers[question._id];
-
     if (question.type === "MCQ" && question.options) {
-      // Get all correct option indices
-      const correctIndices = question.options
-        .map((opt: any, idx: number) => opt.correct ? idx : -1)
-        .filter((idx: number) => idx !== -1);
-      
-      // Get user's selected indices (handle both array and single value)
+      const correctIndices = question.options.map((o, i) => o.correct ? i : -1).filter(i => i !== -1);
       const userSelections = Array.isArray(userAnswer) ? userAnswer : (userAnswer !== undefined ? [userAnswer] : []);
-      
-      // Check if user selected exactly the correct answers (all correct, none incorrect)
-      const selectedCorrect = userSelections.filter((idx: number) => correctIndices.includes(idx));
-      const selectedIncorrect = userSelections.filter((idx: number) => !correctIndices.includes(idx));
-      
-      return selectedCorrect.length === correctIndices.length && selectedIncorrect.length === 0;
-    } else if (question.type === "TF" && question.answer) {
-      return userAnswer === question.answer;
-    } else if (question.type === "FIB" && question.answers) {
-      const userAnswerLower = (userAnswer || "").toLowerCase().trim();
-      return question.answers.some(
-        (ans: any) => {
-          // Handle both object format { text: "answer" } and string format
-          const correctAnswer = typeof ans === "string" ? ans : (ans?.text || ans);
-          return String(correctAnswer || "").toLowerCase().trim() === userAnswerLower;
-        }
-      );
+      return correctIndices.length === userSelections.filter((i: number) => correctIndices.includes(i)).length &&
+             userSelections.filter((i: number) => !correctIndices.includes(i)).length === 0;
     }
-
+    if (question.type === "TF" && question.answer) {
+      return userAnswer === question.answer;
+    }
+    if (question.type === "FIB") {
+      return isFIBCorrect(question);
+    }
     return false;
   }, [answers]);
 
-  // Timer countdown
-  useEffect(() => {
-    if (timeRemaining === null || timeRemaining <= 0 || isPreview || submitted) return;
-
-    const timer = setInterval(() => {
-      setTimeRemaining((prev) => {
-        if (prev === null || prev <= 1) {
-          // Auto-submit when time runs out
-          setSubmitted(true);
-          const { earnedPoints, totalPoints } = calculateScore();
-          const percentage = totalPoints > 0 ? (earnedPoints / totalPoints) * 100 : 0;
-          setScore(percentage);
-          if (!isPreview && currentUser && qid && role === "STUDENT") {
-            // Save score to database with answers
-            client.submitQuizScore(qid.toString(), currentUser._id, earnedPoints, answers)
-              .then(async (updatedQuiz) => {
-                setQuiz(updatedQuiz);
-                setHasTakenQuiz(true);
-                if (updatedQuiz.studentScores) {
-                  const studentScoreEntry = updatedQuiz.studentScores.find(
-                    (s: StudentScore) => 
-                      String(s.studentId) === String(currentUser._id) || 
-                      s.studentId === currentUser._id
-                  );
-                  if (studentScoreEntry) {
-                    setStudentScore(studentScoreEntry);
-                    // Update answers state with saved answers
-                    if (studentScoreEntry.answers) {
-                      setAnswers(studentScoreEntry.answers);
-                    }
-                  }
-                }
-                alert("Time is up! Quiz has been submitted.");
-              })
-              .catch((err) => {
-                console.error("Failed to submit quiz score:", err);
-                alert("Time is up! Quiz submitted but score may not have been saved.");
-              });
-          }
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [timeRemaining, isPreview, submitted, cid, router, calculateScore, currentUser, qid, role, answers]);
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+  const calculateScore = useCallback(() => {
+    if (!quiz) return { earnedPoints: 0, totalPoints: 0 };
+    let earnedPoints = 0, totalPoints = 0;
+    quiz.questions.forEach(q => {
+      totalPoints += q.points || 0;
+      if (isQuestionCorrect(q)) earnedPoints += q.points || 0;
+    });
+    return { earnedPoints, totalPoints };
+  }, [quiz, isQuestionCorrect]);
 
   const handleAnswerChange = (questionId: string, value: any) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [questionId]: value
-    }));
+    setAnswers(prev => ({ ...prev, [questionId]: value }));
   };
 
   const handleMCQAnswerChange = (questionId: string, optionIndex: number) => {
-    setAnswers((prev) => {
-      const currentAnswer = prev[questionId];
-      // If current answer is an array, use it; otherwise convert to array or start new array
-      const currentSelections = Array.isArray(currentAnswer) ? currentAnswer : (currentAnswer !== undefined ? [currentAnswer] : []);
-      
-      // Toggle the selection
-      const newSelections = currentSelections.includes(optionIndex)
-        ? currentSelections.filter((idx: number) => idx !== optionIndex)
-        : [...currentSelections, optionIndex];
-      
-      return {
-        ...prev,
-        [questionId]: newSelections
-      };
+    setAnswers(prev => {
+      const selections = Array.isArray(prev[questionId]) ? prev[questionId] : (prev[questionId] !== undefined ? [prev[questionId]] : []);
+      const updated = selections.includes(optionIndex) ? selections.filter(i => i !== optionIndex) : [...selections, optionIndex];
+      return { ...prev, [questionId]: updated };
     });
   };
 
   const handleSubmit = async () => {
     if (submitted) return;
-    
     setSubmitted(true);
-    
-    // Calculate score
     const { earnedPoints, totalPoints } = calculateScore();
-    const percentage = totalPoints > 0 ? (earnedPoints / totalPoints) * 100 : 0;
-    setScore(percentage);
+    setScore(totalPoints > 0 ? (earnedPoints / totalPoints) * 100 : 0);
 
-    if (isPreview) {
-      // Faculty preview - show score but don't save
-      return;
-    }
+    if (isPreview) return;
 
-    // Save score to database for students
     if (currentUser && qid && role === "STUDENT") {
       try {
         await client.submitQuizScore(qid.toString(), currentUser._id, earnedPoints, answers);
-        // Reload quiz to get updated studentScores
         const updatedQuiz = await client.findQuizById(qid.toString());
         setQuiz(updatedQuiz);
         setHasTakenQuiz(true);
-        if (updatedQuiz.studentScores) {
-          const studentScoreEntry = updatedQuiz.studentScores.find(
-            (s: StudentScore) => 
-              String(s.studentId) === String(currentUser._id) || 
-              s.studentId === currentUser._id
-          );
-          if (studentScoreEntry) {
-            setStudentScore(studentScoreEntry);
-            // Update answers state with saved answers
-            if (studentScoreEntry.answers) {
-              setAnswers(studentScoreEntry.answers);
-            }
-          }
-        }
       } catch (err) {
         console.error("Failed to submit quiz score:", err);
-        alert("Failed to save quiz score. Please try again.");
+        alert("Failed to save quiz score. Try again.");
         setSubmitted(false);
-        return;
       }
     }
-
-    // Don't navigate away - show the read-only view with their score
   };
 
-  const handleRetakeQuiz = () => {
-    setAnswers({});
-    setSubmitted(false);
-    setScore(null);
-    setHasTakenQuiz(false);
-    setStudentScore(null);
-    setCurrentQuestionIndex(0); // Reset to first question
-    if (quiz?.timeLimit && !isPreview && quiz.questions && quiz.questions.length > 0) {
-      setTimeRemaining(quiz.timeLimit * 60);
-    }
-  };
-
-  // Check if student can retake the quiz
   const canRetakeQuiz = () => {
-    if (isPreview) return false; // Faculty can always retake in preview
-    if (!quiz?.multipleAttempts) return false; // Multiple attempts must be enabled
-    if (!studentScore) return false; // Must have taken the quiz at least once
-    
-    const currentAttempt = studentScore.attempt || 0;
-    const maxAttempts = quiz.maxAttempts;
-    
-    // If maxAttempts is null, unlimited attempts allowed
-    if (maxAttempts === null || maxAttempts === undefined) return true;
-    
-    // Check if current attempt is less than max attempts
-    return currentAttempt < maxAttempts;
+    if (isPreview || !quiz?.multipleAttempts || !studentScore) return false;
+    if (quiz.maxAttempts === null || quiz.maxAttempts === undefined) return true;
+    return (studentScore.attempt || 0) < quiz.maxAttempts;
   };
 
-  if (loading) {
-    return <div>Loading quiz...</div>;
-  }
-
-  if (!quiz) {
-    return <div>Quiz not found</div>;
-  }
+  if (loading) return <div>Loading quiz...</div>;
+  if (!quiz) return <div>Quiz not found</div>;
 
   const questions = quiz.questions || [];
+  const question = questions[currentQuestionIndex];
 
   return (
     <div id="wd-quiz-preview">
-      <hr />
-      
-      {/* Preview Banner for Faculty */}
-      {isPreview && !hasTakenQuiz && (
-        <Alert variant="warning" className="mb-4">
-          <strong>PREVIEW MODE</strong> - You are taking this quiz as a student would. Your score will be shown but not saved.
-        </Alert>
-      )}
+      <h2>{quiz.title}</h2>
+      {quiz.instruction && <Card className="mb-4"><Card.Body>{quiz.instruction}</Card.Body></Card>}
+      {timeRemaining !== null && !isPreview && <Badge bg="info">Time: {Math.floor(timeRemaining/60)}:{(timeRemaining%60).toString().padStart(2,"0")}</Badge>}
 
-      {/* Already Taken Banner for Students */}
-      {hasTakenQuiz && role === "STUDENT" && (
-        <Alert variant="info" className="mb-4">
-          <div className="d-flex justify-content-between align-items-center">
-            <div>
-              <strong>Quiz Already Completed</strong> - You have already taken this quiz. Your answers are shown below in read-only mode.
-              {studentScore && (
-                <div className="mt-2">
-                  Attempt {studentScore.attempt}
-                  {quiz.maxAttempts && ` of ${quiz.maxAttempts}`}
-                  {!quiz.maxAttempts && " (unlimited attempts allowed)"}
-                </div>
-              )}
-            </div>
-            {canRetakeQuiz() && (
-              <Button variant="outline-primary" onClick={handleRetakeQuiz}>
-                Take Quiz Again
-              </Button>
-            )}
-            {!canRetakeQuiz() && quiz.multipleAttempts && (
-              <div className="text-muted">
-                Maximum attempts reached
-              </div>
-            )}
-          </div>
-        </Alert>
-      )}
-
-      {/* Score Display - Show for students who have taken quiz or after submission */}
-      {(hasTakenQuiz || (submitted && score !== null)) && score !== null && (
-        <Alert variant={score >= 70 ? "success" : score >= 60 ? "warning" : "danger"} className="mb-4">
-          <div className="d-flex justify-content-between align-items-center">
-            <div>
-              <strong>Quiz Score: {score.toFixed(1)}%</strong>
-              {quiz && studentScore && (
-                <div className="mt-2">
-                  {studentScore.lastScore} out of {quiz.points} points
-                </div>
-              )}
-              {quiz && !studentScore && (
-                <div className="mt-2">
-                  {calculateScore().earnedPoints} out of {calculateScore().totalPoints} points
-                </div>
-              )}
-            </div>
-            {isPreview && !hasTakenQuiz && (
-              <Button variant="outline-primary" onClick={handleRetakeQuiz}>
-                Take Quiz Again
-              </Button>
-            )}
-          </div>
-        </Alert>
-      )}
-
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h2>{quiz.title || "Untitled Quiz"}</h2>
-          {timeRemaining !== null && !isPreview && (
-            <Badge bg={timeRemaining < 300 ? "danger" : "info"} className="ms-2">
-              Time Remaining: {formatTime(timeRemaining)}
-            </Badge>
-          )}
-        </div>
-        <div className="d-flex gap-2">
-          {isPreview ? (
-            <Link href={`/Courses/${cid}/Quizzes/${qid}`}>
-              <Button variant="secondary">Back to Quiz Details</Button>
-            </Link>
-          ) : (
-            <Link href={`/Courses/${cid}/Quizzes`}>
-              <Button variant="secondary">Cancel</Button>
-            </Link>
-          )}
-        </div>
+      {/* Jump-to-question navigation */}
+      <div className="mb-3">
+        <strong>Jump to question:</strong>{" "}
+        {questions.map((_, idx) => (
+          <Button
+            key={idx}
+            size="sm"
+            variant={currentQuestionIndex === idx ? "primary" : "outline-primary"}
+            className="me-1 mb-1"
+            onClick={() => setCurrentQuestionIndex(idx)}
+          >
+            {idx + 1}
+          </Button>
+        ))}
       </div>
 
-      {/* Quiz Instructions */}
-      {quiz.instruction && (
-        <Card className="mb-4">
+      {question && (
+        <Card className="mb-3">
           <Card.Body>
-            <h5>Instructions</h5>
-            <div style={{ whiteSpace: "pre-wrap" }}>{quiz.instruction}</div>
-            <div className="mt-2">
-              <strong>Total Points:</strong> {quiz.points} | 
-              <strong> Questions:</strong> {questions.length}
-              {quiz.timeLimit > 0 && (
-                <> | <strong> Time Limit:</strong> {quiz.timeLimit} minutes</>
+          <div className="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <strong>Q{currentQuestionIndex + 1}: {question.name}</strong>
+              {question.question && (
+                <div className="mt-1" style={{ fontSize: "0.95rem", color: "#555" }}>
+                  {question.question}
+                </div>
               )}
+            </div>
+
+            <div className="d-flex flex-column align-items-end">
+              {question.points && <Badge bg="secondary" className="mb-1">{question.points} pts</Badge>}
+              {submitted && (
+                <Badge bg={isQuestionCorrect(question) ? "success" : "danger"}>
+                  {isQuestionCorrect(question) ? "✓ Correct" : "✗ Incorrect"}
+                </Badge>
+              )}
+            </div>
+          </div>
+
+
+            {/* MCQ */}
+            {question.type === "MCQ" && question.options?.map((o, i) => (
+              <FormCheck 
+                key={i}
+                type="checkbox"
+                label={o.text}
+                checked={Array.isArray(answers[question._id]) ? answers[question._id].includes(i) : false}
+                onChange={() => handleMCQAnswerChange(question._id, i)}
+                disabled={submitted || (hasTakenQuiz && !canRetakeQuiz())}
+              />
+            ))}
+
+            {/* TF */}
+            {question.type === "TF" && ["True","False"].map(val => (
+              <FormCheck
+                key={val}
+                type="radio"
+                name={question._id}
+                label={val}
+                checked={answers[question._id] === val}
+                onChange={() => handleAnswerChange(question._id, val)}
+                disabled={submitted || (hasTakenQuiz && !canRetakeQuiz())}
+              />
+            ))}
+
+            {/* FIB */}
+            {question.type === "FIB" && question.answers?.map((blank, bIdx) => (
+              <FormControl
+                key={bIdx}
+                className="mt-2"
+                placeholder={`Blank ${bIdx+1}${blank.blankText ? `: ${blank.blankText}` : ""}`}
+                value={(answers[question._id]?.[bIdx] || "")}
+                onChange={e => {
+                  const updated = [...(answers[question._id] || [])];
+                  updated[bIdx] = e.target.value;
+                  handleAnswerChange(question._id, updated);
+                }}
+                disabled={submitted || (hasTakenQuiz && !canRetakeQuiz())}
+              />
+            ))}
+
+            {/* Previous / Next */}
+            <div className="d-flex justify-content-between mt-3">
+              <Button onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex-1))} disabled={currentQuestionIndex===0}>Previous</Button>
+              <Button onClick={() => setCurrentQuestionIndex(Math.min(questions.length-1, currentQuestionIndex+1))} disabled={currentQuestionIndex===questions.length-1}>Next</Button>
             </div>
           </Card.Body>
         </Card>
       )}
 
-      {/* Questions - Show one at a time during quiz, all after submission */}
-      {submitted || (hasTakenQuiz && !canRetakeQuiz()) ? (
-        // Show all questions after submission
-        <div className={`mb-4 ${hasTakenQuiz && !canRetakeQuiz() ? "opacity-50" : ""}`} style={hasTakenQuiz && !canRetakeQuiz() ? { opacity: 0.6 } : {}}>
-          {questions.map((question, index) => {
-          // Determine if question was answered correctly (show for completed quizzes or faculty preview after submission)
-          const isCorrect = (hasTakenQuiz && !canRetakeQuiz() && submitted) || (isPreview && submitted) 
-            ? isQuestionCorrect(question) 
-            : null;
-          const borderColor = isCorrect === true ? "success" : isCorrect === false ? "danger" : "secondary";
-          
-          return (
-          <Card 
-            key={question._id || index} 
-            className="mb-3"
-            border={hasTakenQuiz && !canRetakeQuiz() && submitted ? borderColor : undefined}
-            style={
-              ((hasTakenQuiz && !canRetakeQuiz() && submitted) || (isPreview && submitted))
-                ? {
-                    borderWidth: "3px",
-                    backgroundColor: isCorrect === true ? "rgba(25, 135, 84, 0.1)" : isCorrect === false ? "rgba(220, 53, 69, 0.1)" : undefined
-                  }
-                : {}
-            }
-          >
-            <Card.Body>
-              <div className="d-flex justify-content-between align-items-start mb-3">
-                <h5>
-                  Question {index + 1} 
-                  {question.points && (
-                    <Badge bg="secondary" className="ms-2">{question.points} pts</Badge>
-                  )}
-                  {((hasTakenQuiz && !canRetakeQuiz() && submitted) || (isPreview && submitted)) && isCorrect !== null && (
-                    <Badge bg={isCorrect ? "success" : "danger"} className="ms-2">
-                      {isCorrect ? "✓ Correct" : "✗ Incorrect"}
-                    </Badge>
-                  )}
-                </h5>
-              </div>
-
-              <div className="mb-3">
-                <strong>{question.name || "(Untitled Question)"}</strong>
-              </div>
-
-              {/* Multiple Choice Question */}
-              {question.type === "MCQ" && question.options && (
-                <div>
-                  {question.options.map((option: any, optIndex: number) => {
-                    const userAnswer = answers[question._id];
-                    const userSelections = Array.isArray(userAnswer) ? userAnswer : (userAnswer !== undefined ? [userAnswer] : []);
-                    const isChecked = userSelections.includes(optIndex);
-                    
-                    return (
-                      <div key={optIndex} className="mb-2">
-                        <FormCheck
-                          type="checkbox"
-                          id={`option-${question._id}-${optIndex}`}
-                          label={option.text}
-                          checked={isChecked}
-                          onChange={() => handleMCQAnswerChange(question._id, optIndex)}
-                          disabled={submitted || (hasTakenQuiz && !canRetakeQuiz())}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* True/False Question */}
-              {question.type === "TF" && (
-                <div>
-                  <FormCheck
-                    type="radio"
-                    name={`question-${question._id}`}
-                    id={`tf-${question._id}-true`}
-                    label="True"
-                    checked={answers[question._id] === "True"}
-                    onChange={() => handleAnswerChange(question._id, "True")}
-                    disabled={submitted || (hasTakenQuiz && !canRetakeQuiz())}
-                  />
-                  <FormCheck
-                    type="radio"
-                    name={`question-${question._id}`}
-                    id={`tf-${question._id}-false`}
-                    label="False"
-                    checked={answers[question._id] === "False"}
-                    onChange={() => handleAnswerChange(question._id, "False")}
-                    disabled={submitted || (hasTakenQuiz && !canRetakeQuiz())}
-                    className="mt-2"
-                  />
-                </div>
-              )}
-
-              {/* Fill in the Blank Question */}
-              {question.type === "FIB" && (
-                <div>
-                  <FormControl
-                    type="text"
-                    placeholder="Enter your answer"
-                    value={answers[question._id] || ""}
-                    onChange={(e) => handleAnswerChange(question._id, e.target.value)}
-                    disabled={submitted || (hasTakenQuiz && !canRetakeQuiz())}
-                  />
-                </div>
-              )}
-            </Card.Body>
-          </Card>
-          );
-        })}
-        </div>
-      ) : (
-        // Show one question at a time during quiz
-        questions.length > 0 && (
-          <div className="mb-4">
-            {(() => {
-              const question = questions[currentQuestionIndex];
-              if (!question) return null;
-
-              return (
-                <Card className="mb-3">
-                  <Card.Body>
-                    <div className="d-flex justify-content-between align-items-start mb-3">
-                      <h5>
-                        Question {currentQuestionIndex + 1} of {questions.length}
-                        {question.points && (
-                          <Badge bg="secondary" className="ms-2">{question.points} pts</Badge>
-                        )}
-                      </h5>
-                    </div>
-
-                    <div className="mb-3">
-                      <strong>{question.name || "(Untitled Question)"}</strong>
-                    </div>
-
-                    {/* Multiple Choice Question */}
-                    {question.type === "MCQ" && question.options && (
-                      <div>
-                        {question.options.map((option: any, optIndex: number) => {
-                          const userAnswer = answers[question._id];
-                          const userSelections = Array.isArray(userAnswer) ? userAnswer : (userAnswer !== undefined ? [userAnswer] : []);
-                          const isChecked = userSelections.includes(optIndex);
-                          
-                          return (
-                            <div key={optIndex} className="mb-2">
-                              <FormCheck
-                                type="checkbox"
-                                id={`option-${question._id}-${optIndex}`}
-                                label={option.text}
-                                checked={isChecked}
-                                onChange={() => handleMCQAnswerChange(question._id, optIndex)}
-                              />
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {/* True/False Question */}
-                    {question.type === "TF" && (
-                      <div>
-                        <FormCheck
-                          type="radio"
-                          name={`question-${question._id}`}
-                          id={`tf-${question._id}-true`}
-                          label="True"
-                          checked={answers[question._id] === "True"}
-                          onChange={() => handleAnswerChange(question._id, "True")}
-                        />
-                        <FormCheck
-                          type="radio"
-                          name={`question-${question._id}`}
-                          id={`tf-${question._id}-false`}
-                          label="False"
-                          checked={answers[question._id] === "False"}
-                          onChange={() => handleAnswerChange(question._id, "False")}
-                          className="mt-2"
-                        />
-                      </div>
-                    )}
-
-                    {/* Fill in the Blank Question */}
-                    {question.type === "FIB" && (
-                      <div>
-                        <FormControl
-                          type="text"
-                          placeholder="Enter your answer"
-                          value={answers[question._id] || ""}
-                          onChange={(e) => handleAnswerChange(question._id, e.target.value)}
-                        />
-                      </div>
-                    )}
-
-                    {/* Navigation Buttons */}
-                    <div className="d-flex justify-content-between mt-4">
-                      <Button
-                        variant="secondary"
-                        onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))}
-                        disabled={currentQuestionIndex === 0}
-                      >
-                        Previous
-                      </Button>
-                      <Button
-                        variant="primary"
-                        onClick={() => setCurrentQuestionIndex(Math.min(questions.length - 1, currentQuestionIndex + 1))}
-                        disabled={currentQuestionIndex === questions.length - 1}
-                      >
-                        Next
-                      </Button>
-                    </div>
-                  </Card.Body>
-                </Card>
-              );
-            })()}
-          </div>
-        )
-      )}
-
-      {/* Submit Button - Show if quiz has questions and (hasn't been taken OR can retake) */}
-      {questions.length > 0 && (!hasTakenQuiz || (hasTakenQuiz && canRetakeQuiz() && !submitted)) && (
-        <div className="d-flex justify-content-end mb-4">
-          <Button 
-            variant="primary" 
-            size="lg" 
-            onClick={handleSubmit}
-            disabled={submitted}
-          >
-            {submitted ? "Submitted" : "Submit Quiz"}
-          </Button>
+      {!submitted && questions.length > 0 && (
+        <div className="d-flex justify-content-end mt-4">
+          <Button onClick={handleSubmit}>Submit Quiz</Button>
         </div>
       )}
 
-      {questions.length === 0 && (
-        <Alert variant="info">
-          {isPreview 
-            ? "This quiz has no questions yet. Please add questions in the editor."
-            : "This quiz has no questions yet. Come back later."
-          }
+      {submitted && score !== null && (
+        <Alert variant={score >= 70 ? "success" : score >= 60 ? "warning" : "danger"} className="mt-3">
+          Score: {score.toFixed(1)}%
         </Alert>
       )}
     </div>
-  );
+  )
 }
