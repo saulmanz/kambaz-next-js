@@ -59,6 +59,7 @@ export default function QuizPreview() {
   const [score, setScore] = useState<number | null>(null);
   const [studentScore, setStudentScore] = useState<StudentScore | null>(null);
   const [hasTakenQuiz, setHasTakenQuiz] = useState(false);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
   useEffect(() => {
     if (!qid) return;
@@ -120,8 +121,20 @@ export default function QuizPreview() {
       const userAnswer = answers[question._id];
 
       if (question.type === "MCQ" && question.options) {
-        const correctIndex = question.options.findIndex((opt: any) => opt.correct);
-        if (userAnswer === correctIndex) {
+        // Get all correct option indices
+        const correctIndices = question.options
+          .map((opt: any, idx: number) => opt.correct ? idx : -1)
+          .filter((idx: number) => idx !== -1);
+        
+        // Get user's selected indices (handle both array and single value)
+        const userSelections = Array.isArray(userAnswer) ? userAnswer : (userAnswer !== undefined ? [userAnswer] : []);
+        
+        // Check if user selected exactly the correct answers (all correct, none incorrect)
+        const selectedCorrect = userSelections.filter((idx: number) => correctIndices.includes(idx));
+        const selectedIncorrect = userSelections.filter((idx: number) => !correctIndices.includes(idx));
+        
+        // Only award points if all correct answers are selected and no incorrect answers
+        if (selectedCorrect.length === correctIndices.length && selectedIncorrect.length === 0) {
           earnedPoints += question.points || 0;
         }
       } else if (question.type === "TF" && question.answer) {
@@ -131,7 +144,11 @@ export default function QuizPreview() {
       } else if (question.type === "FIB" && question.answers) {
         const userAnswerLower = (userAnswer || "").toLowerCase().trim();
         const isCorrect = question.answers.some(
-          (ans: string) => ans.toLowerCase().trim() === userAnswerLower
+          (ans: any) => {
+            // Handle both object format { text: "answer" } and string format
+            const correctAnswer = typeof ans === "string" ? ans : (ans?.text || ans);
+            return String(correctAnswer || "").toLowerCase().trim() === userAnswerLower;
+          }
         );
         if (isCorrect) {
           earnedPoints += question.points || 0;
@@ -148,14 +165,29 @@ export default function QuizPreview() {
     const userAnswer = answers[question._id];
 
     if (question.type === "MCQ" && question.options) {
-      const correctIndex = question.options.findIndex((opt: any) => opt.correct);
-      return userAnswer === correctIndex;
+      // Get all correct option indices
+      const correctIndices = question.options
+        .map((opt: any, idx: number) => opt.correct ? idx : -1)
+        .filter((idx: number) => idx !== -1);
+      
+      // Get user's selected indices (handle both array and single value)
+      const userSelections = Array.isArray(userAnswer) ? userAnswer : (userAnswer !== undefined ? [userAnswer] : []);
+      
+      // Check if user selected exactly the correct answers (all correct, none incorrect)
+      const selectedCorrect = userSelections.filter((idx: number) => correctIndices.includes(idx));
+      const selectedIncorrect = userSelections.filter((idx: number) => !correctIndices.includes(idx));
+      
+      return selectedCorrect.length === correctIndices.length && selectedIncorrect.length === 0;
     } else if (question.type === "TF" && question.answer) {
       return userAnswer === question.answer;
     } else if (question.type === "FIB" && question.answers) {
       const userAnswerLower = (userAnswer || "").toLowerCase().trim();
       return question.answers.some(
-        (ans: string) => ans.toLowerCase().trim() === userAnswerLower
+        (ans: any) => {
+          // Handle both object format { text: "answer" } and string format
+          const correctAnswer = typeof ans === "string" ? ans : (ans?.text || ans);
+          return String(correctAnswer || "").toLowerCase().trim() === userAnswerLower;
+        }
       );
     }
 
@@ -223,6 +255,24 @@ export default function QuizPreview() {
     }));
   };
 
+  const handleMCQAnswerChange = (questionId: string, optionIndex: number) => {
+    setAnswers((prev) => {
+      const currentAnswer = prev[questionId];
+      // If current answer is an array, use it; otherwise convert to array or start new array
+      const currentSelections = Array.isArray(currentAnswer) ? currentAnswer : (currentAnswer !== undefined ? [currentAnswer] : []);
+      
+      // Toggle the selection
+      const newSelections = currentSelections.includes(optionIndex)
+        ? currentSelections.filter((idx: number) => idx !== optionIndex)
+        : [...currentSelections, optionIndex];
+      
+      return {
+        ...prev,
+        [questionId]: newSelections
+      };
+    });
+  };
+
   const handleSubmit = async () => {
     if (submitted) return;
     
@@ -268,7 +318,6 @@ export default function QuizPreview() {
       }
     }
 
-    alert(`Quiz submitted! Score: ${earnedPoints}/${totalPoints} (${percentage.toFixed(1)}%)`);
     // Don't navigate away - show the read-only view with their score
   };
 
@@ -278,6 +327,7 @@ export default function QuizPreview() {
     setScore(null);
     setHasTakenQuiz(false);
     setStudentScore(null);
+    setCurrentQuestionIndex(0); // Reset to first question
     if (quiz?.timeLimit && !isPreview && quiz.questions && quiz.questions.length > 0) {
       setTimeRemaining(quiz.timeLimit * 60);
     }
@@ -413,11 +463,15 @@ export default function QuizPreview() {
         </Card>
       )}
 
-      {/* Questions */}
-      <div className={`mb-4 ${hasTakenQuiz && !canRetakeQuiz() ? "opacity-50" : ""}`} style={hasTakenQuiz && !canRetakeQuiz() ? { opacity: 0.6 } : {}}>
-        {questions.map((question, index) => {
-          // Determine if question was answered correctly (only show for completed quizzes)
-          const isCorrect = hasTakenQuiz && !canRetakeQuiz() && submitted ? isQuestionCorrect(question) : null;
+      {/* Questions - Show one at a time during quiz, all after submission */}
+      {submitted || (hasTakenQuiz && !canRetakeQuiz()) ? (
+        // Show all questions after submission
+        <div className={`mb-4 ${hasTakenQuiz && !canRetakeQuiz() ? "opacity-50" : ""}`} style={hasTakenQuiz && !canRetakeQuiz() ? { opacity: 0.6 } : {}}>
+          {questions.map((question, index) => {
+          // Determine if question was answered correctly (show for completed quizzes or faculty preview after submission)
+          const isCorrect = (hasTakenQuiz && !canRetakeQuiz() && submitted) || (isPreview && submitted) 
+            ? isQuestionCorrect(question) 
+            : null;
           const borderColor = isCorrect === true ? "success" : isCorrect === false ? "danger" : "secondary";
           
           return (
@@ -426,7 +480,7 @@ export default function QuizPreview() {
             className="mb-3"
             border={hasTakenQuiz && !canRetakeQuiz() && submitted ? borderColor : undefined}
             style={
-              hasTakenQuiz && !canRetakeQuiz() && submitted
+              ((hasTakenQuiz && !canRetakeQuiz() && submitted) || (isPreview && submitted))
                 ? {
                     borderWidth: "3px",
                     backgroundColor: isCorrect === true ? "rgba(25, 135, 84, 0.1)" : isCorrect === false ? "rgba(220, 53, 69, 0.1)" : undefined
@@ -441,7 +495,7 @@ export default function QuizPreview() {
                   {question.points && (
                     <Badge bg="secondary" className="ms-2">{question.points} pts</Badge>
                   )}
-                  {hasTakenQuiz && !canRetakeQuiz() && submitted && isCorrect !== null && (
+                  {((hasTakenQuiz && !canRetakeQuiz() && submitted) || (isPreview && submitted)) && isCorrect !== null && (
                     <Badge bg={isCorrect ? "success" : "danger"} className="ms-2">
                       {isCorrect ? "✓ Correct" : "✗ Incorrect"}
                     </Badge>
@@ -456,19 +510,24 @@ export default function QuizPreview() {
               {/* Multiple Choice Question */}
               {question.type === "MCQ" && question.options && (
                 <div>
-                  {question.options.map((option: any, optIndex: number) => (
-                    <div key={optIndex} className="mb-2">
-                      <FormCheck
-                        type="radio"
-                        name={`question-${question._id}`}
-                        id={`option-${question._id}-${optIndex}`}
-                        label={option.text}
-                        checked={answers[question._id] === optIndex}
-                        onChange={() => handleAnswerChange(question._id, optIndex)}
-                        disabled={submitted || (hasTakenQuiz && !canRetakeQuiz())}
-                      />
-                    </div>
-                  ))}
+                  {question.options.map((option: any, optIndex: number) => {
+                    const userAnswer = answers[question._id];
+                    const userSelections = Array.isArray(userAnswer) ? userAnswer : (userAnswer !== undefined ? [userAnswer] : []);
+                    const isChecked = userSelections.includes(optIndex);
+                    
+                    return (
+                      <div key={optIndex} className="mb-2">
+                        <FormCheck
+                          type="checkbox"
+                          id={`option-${question._id}-${optIndex}`}
+                          label={option.text}
+                          checked={isChecked}
+                          onChange={() => handleMCQAnswerChange(question._id, optIndex)}
+                          disabled={submitted || (hasTakenQuiz && !canRetakeQuiz())}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
@@ -513,7 +572,113 @@ export default function QuizPreview() {
           </Card>
           );
         })}
-      </div>
+        </div>
+      ) : (
+        // Show one question at a time during quiz
+        questions.length > 0 && (
+          <div className="mb-4">
+            {(() => {
+              const question = questions[currentQuestionIndex];
+              if (!question) return null;
+
+              return (
+                <Card className="mb-3">
+                  <Card.Body>
+                    <div className="d-flex justify-content-between align-items-start mb-3">
+                      <h5>
+                        Question {currentQuestionIndex + 1} of {questions.length}
+                        {question.points && (
+                          <Badge bg="secondary" className="ms-2">{question.points} pts</Badge>
+                        )}
+                      </h5>
+                    </div>
+
+                    <div className="mb-3">
+                      <strong>{question.name || "(Untitled Question)"}</strong>
+                    </div>
+
+                    {/* Multiple Choice Question */}
+                    {question.type === "MCQ" && question.options && (
+                      <div>
+                        {question.options.map((option: any, optIndex: number) => {
+                          const userAnswer = answers[question._id];
+                          const userSelections = Array.isArray(userAnswer) ? userAnswer : (userAnswer !== undefined ? [userAnswer] : []);
+                          const isChecked = userSelections.includes(optIndex);
+                          
+                          return (
+                            <div key={optIndex} className="mb-2">
+                              <FormCheck
+                                type="checkbox"
+                                id={`option-${question._id}-${optIndex}`}
+                                label={option.text}
+                                checked={isChecked}
+                                onChange={() => handleMCQAnswerChange(question._id, optIndex)}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* True/False Question */}
+                    {question.type === "TF" && (
+                      <div>
+                        <FormCheck
+                          type="radio"
+                          name={`question-${question._id}`}
+                          id={`tf-${question._id}-true`}
+                          label="True"
+                          checked={answers[question._id] === "True"}
+                          onChange={() => handleAnswerChange(question._id, "True")}
+                        />
+                        <FormCheck
+                          type="radio"
+                          name={`question-${question._id}`}
+                          id={`tf-${question._id}-false`}
+                          label="False"
+                          checked={answers[question._id] === "False"}
+                          onChange={() => handleAnswerChange(question._id, "False")}
+                          className="mt-2"
+                        />
+                      </div>
+                    )}
+
+                    {/* Fill in the Blank Question */}
+                    {question.type === "FIB" && (
+                      <div>
+                        <FormControl
+                          type="text"
+                          placeholder="Enter your answer"
+                          value={answers[question._id] || ""}
+                          onChange={(e) => handleAnswerChange(question._id, e.target.value)}
+                        />
+                      </div>
+                    )}
+
+                    {/* Navigation Buttons */}
+                    <div className="d-flex justify-content-between mt-4">
+                      <Button
+                        variant="secondary"
+                        onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))}
+                        disabled={currentQuestionIndex === 0}
+                      >
+                        Previous
+                      </Button>
+                      <Button
+                        variant="primary"
+                        onClick={() => setCurrentQuestionIndex(Math.min(questions.length - 1, currentQuestionIndex + 1))}
+                        disabled={currentQuestionIndex === questions.length - 1}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </Card.Body>
+                </Card>
+              );
+            })()}
+          </div>
+        )
+      )}
 
       {/* Submit Button - Show if quiz has questions and (hasn't been taken OR can retake) */}
       {questions.length > 0 && (!hasTakenQuiz || (hasTakenQuiz && canRetakeQuiz() && !submitted)) && (
