@@ -30,9 +30,8 @@ const QuizSchema = new mongoose.Schema({
       answers: { type: mongoose.Schema.Types.Mixed, default: {} }, // Store student's answers as object
     }
   ],
-  questions: [
-    {questionSchema}
-  ],
+  questions: [questionSchema],
+
   published: { type: Boolean, default: false}
 }, { collection: "quizzes" });
 
